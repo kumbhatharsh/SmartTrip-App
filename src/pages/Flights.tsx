@@ -182,7 +182,7 @@ const Flights = () => {
                 
                 <div className="mb-6">
                   <h3 className="text-sm font-medium flex items-center mb-3">
-                    <Airplane className="h-4 w-4 mr-1" />
+                    <Plane className="h-4 w-4 mr-1" />
                     Airlines
                   </h3>
                   <div className="space-y-2">
