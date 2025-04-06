@@ -35,7 +35,7 @@ const Navbar = () => {
         <div className="flex items-center">
           <NavLink to="/" className="text-2xl font-bold text-ocean-600 flex items-center gap-2">
             <span className="text-gradient-to-r from-ocean-600 to-teal-500">
-              JourneyWave
+              SmartTrip
             </span>
           </NavLink>
         </div>
@@ -58,12 +58,16 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center space-x-4">
-          <Button variant="outline" size="sm" className="rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
-            Sign In
-          </Button>
-          <Button size="sm" className="rounded-full bg-ocean-600 hover:bg-ocean-700">
-            Sign Up
-          </Button>
+          <NavLink to="/signin">
+            <Button variant="outline" size="sm" className="rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
+              Sign In
+            </Button>
+          </NavLink>
+          <NavLink to="/signup">
+            <Button size="sm" className="rounded-full bg-ocean-600 hover:bg-ocean-700">
+              Sign Up
+            </Button>
+          </NavLink>
         </div>
 
         {/* Mobile Toggle */}
@@ -98,12 +102,16 @@ const Navbar = () => {
               </NavLink>
             ))}
             <div className="pt-3 flex flex-col space-y-3">
-              <Button variant="outline" className="w-full rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
-                Sign In
-              </Button>
-              <Button className="w-full rounded-full bg-ocean-600 hover:bg-ocean-700">
-                Sign Up
-              </Button>
+              <NavLink to="/signin" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="outline" className="w-full rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
+                  Sign In
+                </Button>
+              </NavLink>
+              <NavLink to="/signup" onClick={() => setIsMenuOpen(false)}>
+                <Button className="w-full rounded-full bg-ocean-600 hover:bg-ocean-700">
+                  Sign Up
+                </Button>
+              </NavLink>
             </div>
           </div>
         </div>

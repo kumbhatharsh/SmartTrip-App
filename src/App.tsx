@@ -10,6 +10,10 @@ import Flights from "./pages/Flights";
 import Itineraries from "./pages/Itineraries";
 import MyTrips from "./pages/MyTrips";
 import NotFound from "./pages/NotFound";
+import Signup from "./pages/Signup";
+import Signin from "./pages/Signin";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +29,10 @@ const App = () => (
           <Route path="/flights" element={<Flights />} />
           <Route path="/itineraries" element={<Itineraries />} />
           <Route path="/my-trips" element={<MyTrips />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/signin" element={<Signin />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
