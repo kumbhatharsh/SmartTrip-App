@@ -35,7 +35,7 @@ const WeatherAlerts = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {weatherAlerts.map((alert) => (
-          <Alert key={alert.id} variant="outline" className="border-l-4 border-l-sunset-500">
+          <Alert key={alert.id} variant="default" className="border-l-4 border-l-sunset-500">
             <div className="flex items-start">
               {getAlertIcon(alert.alert)}
               <div className="ml-3 flex-1">

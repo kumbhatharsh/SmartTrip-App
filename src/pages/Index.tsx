@@ -1,4 +1,3 @@
-
 import HeroSection from "@/components/HeroSection";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,7 +9,7 @@ import WeatherAlerts from "@/components/WeatherAlerts";
 import LocalEvents from "@/components/LocalEvents";
 import { Button } from "@/components/ui/button";
 import { popularDestinations, popularHotels, popularFlights, popularItineraries } from "@/lib/mockData";
-import { MapPin, ArrowRight, Airplane, Hotel, Calendar } from "lucide-react";
+import { MapPin, ArrowRight, Plane, Hotel, Calendar } from "lucide-react";
 
 const Index = () => {
   return (
@@ -72,7 +71,7 @@ const Index = () => {
           <div className="container mx-auto">
             <div className="flex justify-between items-center mb-10">
               <div className="flex items-center">
-                <Airplane className="h-6 w-6 text-ocean-600 mr-2" />
+                <Plane className="h-6 w-6 text-ocean-600 mr-2" />
                 <h2 className="text-3xl font-bold">Popular Flights</h2>
               </div>
               <Button variant="link" className="text-ocean-600 flex items-center">
@@ -133,7 +132,7 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-ocean-100 flex items-center justify-center mb-4">
-                  <Airplane className="h-8 w-8 text-ocean-600" />
+                  <Plane className="h-8 w-8 text-ocean-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Smart Booking</h3>
                 <p className="text-gray-600">

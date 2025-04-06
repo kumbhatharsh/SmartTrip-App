@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, Airplane, Hotel, MapPin } from "lucide-react";
+import { CalendarIcon, Search, Plane, Hotel, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +41,7 @@ const HeroSection = () => {
           <Tabs defaultValue="flights" className="w-full">
             <TabsList className="grid grid-cols-3 w-full mb-6">
               <TabsTrigger value="flights" className="py-3 text-base">
-                <Airplane className="mr-2 h-5 w-5" />
+                <Plane className="mr-2 h-5 w-5" />
                 Flights
               </TabsTrigger>
               <TabsTrigger value="hotels" className="py-3 text-base">

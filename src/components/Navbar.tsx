@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Menu, 
   X, 
-  Airplane, 
+  Plane, 
   Hotel, 
   Calendar, 
   MapPin, 

@@ -1,6 +1,5 @@
-
 import { NavLink } from "react-router-dom";
-import { Airplane, Hotel, Calendar, MapPin, User, Instagram, Facebook, Twitter } from "lucide-react";
+import { Plane, Hotel, Calendar, MapPin, User, Instagram, Facebook, Twitter } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -30,7 +29,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <NavLink to="/" className="text-ocean-100 hover:text-white transition-colors flex items-center">
-                  <Airplane className="h-4 w-4 mr-2" />
+                  <Plane className="h-4 w-4 mr-2" />
                   Find Flights
                 </NavLink>
               </li>

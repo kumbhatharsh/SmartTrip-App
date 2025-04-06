@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AIAssistant from "@/components/AIAssistant";
@@ -7,7 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Airplane, Calendar, MapPin, Hotel, AlertTriangle, CloudSun, Eye } from "lucide-react";
+import { Plane, Calendar, MapPin, Hotel, AlertTriangle, CloudSun, Eye } from "lucide-react";
 import { weatherAlerts } from "@/lib/mockData";
 
 const MyTrips = () => {
@@ -108,7 +107,7 @@ const MyTrips = () => {
                                 </div>
                                 
                                 <div className="flex items-start">
-                                  <Airplane className="h-5 w-5 text-ocean-600 mr-2 mt-0.5" />
+                                  <Plane className="h-5 w-5 text-ocean-600 mr-2 mt-0.5" />
                                   <div>
                                     <p className="font-medium">Flight</p>
                                     <p className="text-gray-600 text-sm">{trip.flight}</p>
@@ -166,7 +165,7 @@ const MyTrips = () => {
                     <p className="text-gray-600 mb-6">Time to plan your next adventure!</p>
                     <div className="flex justify-center gap-4">
                       <Button className="bg-ocean-600 hover:bg-ocean-700">
-                        <Airplane className="h-4 w-4 mr-2" />
+                        <Plane className="h-4 w-4 mr-2" />
                         Book a Flight
                       </Button>
                       <Button className="bg-teal-600 hover:bg-teal-700">
@@ -207,7 +206,7 @@ const MyTrips = () => {
                             <div className="text-sm text-gray-600">{trip.hotel}</div>
                           </div>
                           <div className="flex items-start">
-                            <Airplane className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
+                            <Plane className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
                             <div className="text-sm text-gray-600">{trip.flight}</div>
                           </div>
                         </div>
@@ -237,7 +236,7 @@ const MyTrips = () => {
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Button className="bg-ocean-600 hover:bg-ocean-700">
-                  <Airplane className="h-4 w-4 mr-2" />
+                  <Plane className="h-4 w-4 mr-2" />
                   Book a Flight
                 </Button>
                 <Button className="bg-teal-600 hover:bg-teal-700">

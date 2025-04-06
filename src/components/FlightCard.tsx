@@ -3,7 +3,7 @@ import { Flight } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Airplane, Clock } from "lucide-react";
+import { Plane, Clock } from "lucide-react";
 
 interface FlightCardProps {
   flight: Flight;
@@ -32,7 +32,7 @@ const FlightCard = ({ flight }: FlightCardProps) => {
         <div className="flex justify-between items-start mb-4">
           <div>
             <div className="flex items-center">
-              <Airplane className="h-4 w-4 text-ocean-600 mr-2" />
+              <Plane className="h-4 w-4 text-ocean-600 mr-2" />
               <span className="text-sm font-medium text-gray-600">{flight.airline}</span>
             </div>
             <Badge variant="outline" className="mt-2 bg-ocean-50 text-ocean-700 border-ocean-200">
@@ -55,7 +55,7 @@ const FlightCard = ({ flight }: FlightCardProps) => {
           <div className="flex-1 mx-4 relative">
             <div className="border-t border-dashed border-gray-300"></div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-ocean-100 flex items-center justify-center">
-              <Airplane className="h-3 w-3 text-ocean-600 transform rotate-90" />
+              <Plane className="h-3 w-3 text-ocean-600 transform rotate-90" />
             </div>
           </div>
           

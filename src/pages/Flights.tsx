@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AIAssistant from "@/components/AIAssistant";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { popularFlights } from "@/lib/mockData";
-import { Search, Airplane, ArrowLeftRight, DollarSign, Clock, Luggage } from "lucide-react";
+import { Search, Plane, ArrowLeftRight, DollarSign, Clock, Luggage } from "lucide-react";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -24,7 +23,7 @@ const Flights = () => {
         <div className="bg-ocean-600 text-white py-12">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center mb-6">
-              <Airplane className="h-7 w-7 mr-2" />
+              <Plane className="h-7 w-7 mr-2" />
               <h1 className="text-3xl font-bold">Find Your Flight</h1>
             </div>
             <div className="max-w-4xl mx-auto">
