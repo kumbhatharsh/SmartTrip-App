@@ -3,13 +3,23 @@ import { Itinerary } from "@/lib/mockData";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, CheckCircle } from "lucide-react";
+import { MapPin, Calendar, CheckCircle, CalendarDays } from "lucide-react";
+import { format } from "date-fns";
 
 interface ItineraryCardProps {
   itinerary: Itinerary;
 }
 
 const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
+  // Format the dates to display them in a more readable format
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return format(date, "MMM d, yyyy");
+  };
+
+  const startDateFormatted = formatDate(itinerary.startDate);
+  const endDateFormatted = formatDate(itinerary.endDate);
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 overflow-hidden relative">
@@ -32,6 +42,10 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
           <div className="flex items-center text-gray-600 text-sm">
             <Calendar className="h-4 w-4 mr-1 text-teal-600" />
             <span>{itinerary.duration}</span>
+          </div>
+          <div className="flex items-center text-gray-600 text-sm">
+            <CalendarDays className="h-4 w-4 mr-1 text-teal-600" />
+            <span>{startDateFormatted} - {endDateFormatted}</span>
           </div>
         </div>
         <p className="text-gray-600 text-sm line-clamp-2 mb-3">{itinerary.description}</p>

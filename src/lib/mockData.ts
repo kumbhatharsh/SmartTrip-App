@@ -1,4 +1,3 @@
-
 export interface Hotel {
   id: string;
   name: string;
@@ -29,6 +28,8 @@ export interface Itinerary {
   image: string;
   description: string;
   highlights: string[];
+  startDate: string;
+  endDate: string;
 }
 
 export const popularDestinations = [
@@ -150,6 +151,8 @@ export const popularItineraries: Itinerary[] = [
     image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&h=500',
     description: 'Experience the magic of Paris with this romantic 5-day itinerary covering all the iconic landmarks.',
     highlights: ['Eiffel Tower', 'Louvre Museum', 'Seine River Cruise', 'Montmartre', 'Notre Dame Cathedral'],
+    startDate: '2025-06-15',
+    endDate: '2025-06-20',
   },
   {
     id: '2',
@@ -160,6 +163,8 @@ export const popularItineraries: Itinerary[] = [
     image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&h=500',
     description: 'Relax and rejuvenate in the tropical paradise of Bali with beautiful beaches and cultural experiences.',
     highlights: ['Kuta Beach', 'Ubud Monkey Forest', 'Tanah Lot Temple', 'Mount Batur', 'Tegallalang Rice Terraces'],
+    startDate: '2025-07-01',
+    endDate: '2025-07-08',
   },
   {
     id: '3',
@@ -170,6 +175,8 @@ export const popularItineraries: Itinerary[] = [
     image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&h=500',
     description: 'Discover the vibrant city of New York with this action-packed 6-day itinerary.',
     highlights: ['Times Square', 'Central Park', 'Statue of Liberty', 'Brooklyn Bridge', 'Empire State Building'],
+    startDate: '2025-06-25',
+    endDate: '2025-07-01',
   },
   {
     id: '4',
@@ -180,6 +187,8 @@ export const popularItineraries: Itinerary[] = [
     image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&h=500',
     description: 'Immerse yourself in the unique blend of traditional and modern culture in Tokyo.',
     highlights: ['Shibuya Crossing', 'Tokyo Skytree', 'Meiji Shrine', 'Akihabara', 'Shinjuku Gyoen Park'],
+    startDate: '2025-07-15',
+    endDate: '2025-07-23',
   },
 ];
 
