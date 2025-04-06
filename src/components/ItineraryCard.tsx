@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, CheckCircle, CalendarDays } from "lucide-react";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 
 interface ItineraryCardProps {
   itinerary: Itinerary;
@@ -13,8 +13,13 @@ interface ItineraryCardProps {
 const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
   // Format the dates to display them in a more readable format
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return format(date, "MMM d, yyyy");
+    try {
+      const date = parseISO(dateStr);
+      return isValid(date) ? format(date, "MMM d, yyyy") : "Date unavailable";
+    } catch (error) {
+      console.error(`Error formatting date: ${dateStr}`, error);
+      return "Date unavailable";
+    }
   };
 
   const startDateFormatted = formatDate(itinerary.startDate);
