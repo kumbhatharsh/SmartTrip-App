@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,15 +152,17 @@ const AIAssistant = () => {
         
         const data = await response.json();
         
-        // Success response
-        setConversation(prev => [...prev, {
-          role: 'assistant', 
-          content: `I've created your custom itinerary! Your browser should open it in a new tab. If it doesn't, you can also generate it from the itineraries page.`
-        }]);
-        
-        // Open the PDF in a new tab if URL is provided
-        if (data.pdfUrl) {
-          window.open(data.pdfUrl, "_blank");
+        // Check if the API returned a result property containing the PDF URL
+        if (data.result) {
+          setConversation(prev => [...prev, {
+            role: 'assistant', 
+            content: `I've created your custom itinerary! Your browser should open it in a new tab. If it doesn't, you can access it here: ${data.result}`
+          }]);
+          
+          // Open the PDF in a new tab
+          window.open(data.result, "_blank");
+        } else {
+          throw new Error("No PDF URL in the response");
         }
         
         resetTravelQuery();

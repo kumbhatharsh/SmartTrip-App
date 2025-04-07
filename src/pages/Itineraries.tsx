@@ -40,6 +40,7 @@ const Itineraries = () => {
   const [durationInput, setDurationInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Check for search results from the AI assistant
@@ -121,14 +122,17 @@ const Itineraries = () => {
       
       const data = await response.json();
       
-      // If the API returns a URL to the PDF
-      if (data.pdfUrl) {
-        window.open(data.pdfUrl, "_blank");
-      } else {
+      if (data.result) {
+        // The response contains the PDF URL
+        setGeneratedPdfUrl(data.result);
+        window.open(data.result, "_blank");
+        
         toast({
           title: "Success",
           description: "Your custom itinerary has been generated",
         });
+      } else {
+        throw new Error("No PDF URL in the response");
       }
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -266,9 +270,11 @@ const Itineraries = () => {
                   const formattedItinerary = {
                     ...itinerary,
                     highlights: itinerary.activities || [],
+                    // Convert the duration to a string for the ItineraryCard component
+                    duration: String(itinerary.duration),
                     // Add startDate and endDate properties (required by ItineraryCard)
                     startDate: new Date().toISOString(),
-                    endDate: new Date(new Date().setDate(new Date().getDate() + (typeof itinerary.duration === 'string' ? parseInt(itinerary.duration) : itinerary.duration))).toISOString(),
+                    endDate: new Date(new Date().setDate(new Date().getDate() + itinerary.duration)).toISOString(),
                     image: `https://source.unsplash.com/random/800x600/?${itinerary.destination.toLowerCase()}`
                   };
                   return <ItineraryCard key={itinerary.id} itinerary={formattedItinerary} />;

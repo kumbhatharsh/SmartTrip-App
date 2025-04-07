@@ -10,6 +10,21 @@ interface GradioRequest {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response(
+      null,
+      { 
+        status: 204,
+        headers: { 
+          "Access-Control-Allow-Origin": "*", 
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type"
+        }
+      }
+    );
+  }
+  
   try {
     // Extract the body from the request
     const { city, interests } = await req.json() as GradioRequest;
@@ -19,11 +34,16 @@ serve(async (req) => {
         JSON.stringify({ error: "City is required" }),
         { 
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
         }
       );
     }
 
+    console.log(`Generating itinerary for ${city} with interests: ${interests}`);
+    
     // Define the Gradio endpoint
     const gradioEndpoint = "https://dfc9ecfbd25bebb4ed.gradio.live/predict";
     
@@ -39,14 +59,20 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Gradio API returned ${response.status}: ${await response.text()}`);
+      const errorText = await response.text();
+      console.error(`Gradio API error (${response.status}): ${errorText}`);
+      throw new Error(`Gradio API returned ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
+    console.log("Gradio API response:", JSON.stringify(data));
     
-    // Return the response from Gradio
+    // The Gradio response contains the PDF URL in data.data
+    const pdfUrl = data.data;
+    
+    // Return the response with the PDF URL
     return new Response(
-      JSON.stringify({ success: true, result: data.data, pdfUrl: data.data }),
+      JSON.stringify({ success: true, result: pdfUrl }),
       { 
         status: 200,
         headers: { 
