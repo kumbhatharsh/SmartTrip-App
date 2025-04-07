@@ -56,7 +56,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      // First check if user already exists to provide better error message
+      const { data: existingUser } = await supabase
+        .from('User')
+        .select('email')
+        .eq('email', email)
+        .single();
+        
+      if (existingUser) {
+        const error = { message: 'User with this email already exists' };
+        toast({
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+      
+      // If no existing user, proceed with sign up
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -68,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) {
+        console.error("Supabase auth error:", error);
         toast({
           title: "Sign up failed",
           description: error.message,
@@ -81,11 +100,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Your account has been created successfully!",
       });
       
+      // No need to manually insert into the User table
+      // The database trigger we created will handle this automatically
+      
       return { error: null };
     } catch (error: any) {
+      console.error("Sign up exception:", error);
       toast({
         title: "An error occurred",
-        description: error.message,
+        description: error.message || "Failed to create account",
         variant: "destructive",
       });
       return { error };
@@ -100,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) {
+        console.error("Sign in error:", error);
         toast({
           title: "Sign in failed",
           description: error.message,
@@ -110,9 +134,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return { error: null };
     } catch (error: any) {
+      console.error("Sign in exception:", error);
       toast({
         title: "An error occurred",
-        description: error.message,
+        description: error.message || "Failed to sign in",
         variant: "destructive",
       });
       return { error };
