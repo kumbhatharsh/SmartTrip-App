@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Menu, 
@@ -11,14 +11,23 @@ import {
   MapPin, 
   User, 
   Search,
-  Settings 
+  Settings,
+  LogOut
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
   };
 
   const navLinks = [
@@ -58,16 +67,35 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center space-x-4">
-          <NavLink to="/signin">
-            <Button variant="outline" size="sm" className="rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
-              Sign In
-            </Button>
-          </NavLink>
-          <NavLink to="/signup">
-            <Button size="sm" className="rounded-full bg-ocean-600 hover:bg-ocean-700">
-              Sign Up
-            </Button>
-          </NavLink>
+          {user ? (
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-700">
+                {user.user_metadata?.firstName || 'User'}
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <>
+              <NavLink to="/signin">
+                <Button variant="outline" size="sm" className="rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
+                  Sign In
+                </Button>
+              </NavLink>
+              <NavLink to="/signup">
+                <Button size="sm" className="rounded-full bg-ocean-600 hover:bg-ocean-700">
+                  Sign Up
+                </Button>
+              </NavLink>
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -102,16 +130,29 @@ const Navbar = () => {
               </NavLink>
             ))}
             <div className="pt-3 flex flex-col space-y-3">
-              <NavLink to="/signin" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" className="w-full rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
-                  Sign In
+              {user ? (
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
                 </Button>
-              </NavLink>
-              <NavLink to="/signup" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full rounded-full bg-ocean-600 hover:bg-ocean-700">
-                  Sign Up
-                </Button>
-              </NavLink>
+              ) : (
+                <>
+                  <NavLink to="/signin" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" className="w-full rounded-full border-ocean-500 text-ocean-600 hover:bg-ocean-50">
+                      Sign In
+                    </Button>
+                  </NavLink>
+                  <NavLink to="/signup" onClick={() => setIsMenuOpen(false)}>
+                    <Button className="w-full rounded-full bg-ocean-600 hover:bg-ocean-700">
+                      Sign Up
+                    </Button>
+                  </NavLink>
+                </>
+              )}
             </div>
           </div>
         </div>

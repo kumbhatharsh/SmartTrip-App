@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const signinSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -29,6 +31,16 @@ type SigninValues = z.infer<typeof signinSchema>;
 const Signin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { signIn, user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home page
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const form = useForm<SigninValues>({
     resolver: zodResolver(signinSchema),
@@ -40,15 +52,20 @@ const Signin = () => {
 
   const onSubmit = async (values: SigninValues) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // This would be replaced with actual signin logic
-      console.log("Signin values:", values);
-      setTimeout(() => {
-        setIsLoading(false);
-        // Redirect would happen here after successful signin
-      }, 1500);
-    } catch (error) {
-      console.error("Signin error:", error);
+      const { error } = await signIn(values.email, values.password);
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        // Successfully signed in
+        navigate("/");
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during sign in");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -67,6 +84,12 @@ const Signin = () => {
               </Link>
             </p>
           </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

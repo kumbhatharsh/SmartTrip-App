@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const signupSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -31,6 +33,16 @@ type SignupValues = z.infer<typeof signupSchema>;
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { signUp, user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home page
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
@@ -44,15 +56,25 @@ const Signup = () => {
 
   const onSubmit = async (values: SignupValues) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // This would be replaced with actual signup logic
-      console.log("Signup values:", values);
-      setTimeout(() => {
-        setIsLoading(false);
-        // Redirect would happen here after successful signup
-      }, 1500);
-    } catch (error) {
-      console.error("Signup error:", error);
+      const { error } = await signUp(
+        values.email,
+        values.password,
+        values.firstName,
+        values.lastName
+      );
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        // Successfully signed up and signed in
+        navigate("/");
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during sign up");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -71,6 +93,12 @@ const Signup = () => {
               </Link>
             </p>
           </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
