@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { popularItineraries } from "@/lib/mockData";
-import { Search, Calendar, MapPin, DollarSign, UsersRound, ArrowLeft } from "lucide-react";
+import { Search, Calendar, MapPin, DollarSign, UsersRound, ArrowLeft, FileText } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 // Interface for Itinerary from supabase
 interface SupabaseItinerary {
@@ -38,6 +39,8 @@ const Itineraries = () => {
   const [destinationInput, setDestinationInput] = useState("");
   const [durationInput, setDurationInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const { toast } = useToast();
 
   // Check for search results from the AI assistant
   useEffect(() => {
@@ -84,6 +87,58 @@ const Itineraries = () => {
     } catch (error) {
       console.error("Error searching itineraries:", error);
       setLoading(false);
+    }
+  };
+
+  // Generate PDF itinerary with the Gradio API
+  const generatePdfItinerary = async (destination: string, duration: string) => {
+    if (!destination) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a destination",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setGeneratingPdf(true);
+    
+    try {
+      const response = await fetch("/api/generate-itinerary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          city: destination,
+          interests: `${duration} days trip`,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to generate itinerary");
+      }
+      
+      const data = await response.json();
+      
+      // If the API returns a URL to the PDF
+      if (data.pdfUrl) {
+        window.open(data.pdfUrl, "_blank");
+      } else {
+        toast({
+          title: "Success",
+          description: "Your custom itinerary has been generated",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate your custom itinerary. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -144,13 +199,21 @@ const Itineraries = () => {
                   />
                 </div>
               </div>
-              <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex justify-center gap-2">
                 <Button 
                   className="bg-sunset-500 hover:bg-sunset-600 px-8"
                   onClick={handleSearch}
                   disabled={loading}
                 >
                   <Search className="h-4 w-4 mr-2" /> Find Itineraries
+                </Button>
+                <Button 
+                  className="bg-ocean-500 hover:bg-ocean-600 px-8"
+                  onClick={() => generatePdfItinerary(destinationInput, durationInput)}
+                  disabled={generatingPdf}
+                >
+                  <FileText className="h-4 w-4 mr-2" /> 
+                  {generatingPdf ? "Generating..." : "Generate PDF Itinerary"}
                 </Button>
               </div>
             </div>
@@ -183,6 +246,16 @@ const Itineraries = () => {
                     <Calendar className="h-3 w-3 mr-1" /> {searchDuration} days
                   </Badge>
                 )}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white"
+                  onClick={() => generatePdfItinerary(searchDestination, searchDuration)}
+                  disabled={generatingPdf}
+                >
+                  <FileText className="h-3 w-3 mr-1" /> 
+                  {generatingPdf ? "Generating..." : "Generate PDF for this search"}
+                </Button>
               </div>
             </div>
             
@@ -195,7 +268,7 @@ const Itineraries = () => {
                     highlights: itinerary.activities || [],
                     // Add startDate and endDate properties (required by ItineraryCard)
                     startDate: new Date().toISOString(),
-                    endDate: new Date(new Date().setDate(new Date().getDate() + itinerary.duration)).toISOString(),
+                    endDate: new Date(new Date().setDate(new Date().getDate() + (typeof itinerary.duration === 'string' ? parseInt(itinerary.duration) : itinerary.duration))).toISOString(),
                     image: `https://source.unsplash.com/random/800x600/?${itinerary.destination.toLowerCase()}`
                   };
                   return <ItineraryCard key={itinerary.id} itinerary={formattedItinerary} />;

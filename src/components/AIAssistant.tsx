@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, MapPin } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, MapPin, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -18,6 +18,7 @@ const AIAssistant = () => {
   const [askingDuration, setAskingDuration] = useState(false);
   const [travelDestination, setTravelDestination] = useState("");
   const [travelDuration, setTravelDuration] = useState(0);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -88,25 +89,23 @@ const AIAssistant = () => {
           sessionStorage.setItem('searchDestination', travelDestination);
           sessionStorage.setItem('searchDuration', days.toString());
           
-          // Bot response
+          // Ask if the user wants to generate a PDF
           setConversation(prev => [...prev, {
             role: 'assistant', 
-            content: `I found ${itineraries.length} itineraries for ${travelDestination}. Opening them for you now.`
+            content: `I found ${itineraries.length} itineraries for ${travelDestination}. Opening them for you now. Would you also like me to generate a custom PDF itinerary for your ${days}-day trip to ${travelDestination}?`
           }]);
           
+          // Navigate to itineraries page
           setTimeout(() => {
-            // Navigate to itineraries page
             navigate('/itineraries');
-            resetTravelQuery();
             setLoading(false);
           }, 1000);
         } else {
           // No itineraries found
           setConversation(prev => [...prev, {
             role: 'assistant', 
-            content: `I couldn't find any itineraries for ${travelDestination}. Would you like to try another destination?`
+            content: `I couldn't find any pre-made itineraries for ${travelDestination}. Would you like me to generate a custom PDF itinerary for your ${days}-day trip to ${travelDestination}?`
           }]);
-          resetTravelQuery();
           setLoading(false);
         }
       } catch (error) {
@@ -116,6 +115,65 @@ const AIAssistant = () => {
           content: `I'm sorry, I had trouble finding itineraries. Could you try again later?`
         }]);
         resetTravelQuery();
+        setLoading(false);
+      }
+      
+      return;
+    }
+
+    // Handle PDF generation request
+    if (userMessage.toLowerCase().includes("yes") && 
+        travelDestination && 
+        travelDuration > 0 &&
+        conversation.length > 0 && 
+        conversation[conversation.length-1].content.includes("generate a custom PDF")) {
+      
+      setGeneratingPdf(true);
+      setConversation(prev => [...prev, {
+        role: 'assistant', 
+        content: `Great! I'm generating a custom PDF itinerary for your ${travelDuration}-day trip to ${travelDestination}. This will take a moment...`
+      }]);
+      
+      try {
+        // Call the edge function to generate the PDF
+        const response = await fetch("/api/generate-itinerary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            city: travelDestination,
+            interests: `${travelDuration} days trip`,
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to generate itinerary");
+        }
+        
+        const data = await response.json();
+        
+        // Success response
+        setConversation(prev => [...prev, {
+          role: 'assistant', 
+          content: `I've created your custom itinerary! Your browser should open it in a new tab. If it doesn't, you can also generate it from the itineraries page.`
+        }]);
+        
+        // Open the PDF in a new tab if URL is provided
+        if (data.pdfUrl) {
+          window.open(data.pdfUrl, "_blank");
+        }
+        
+        resetTravelQuery();
+      } catch (error) {
+        console.error("Error generating PDF:", error);
+        setConversation(prev => [...prev, {
+          role: 'assistant', 
+          content: `I'm sorry, I had trouble generating your PDF itinerary. You can try again from the itineraries page.`
+        }]);
+        resetTravelQuery();
+      } finally {
+        setGeneratingPdf(false);
         setLoading(false);
       }
       
@@ -145,7 +203,7 @@ const AIAssistant = () => {
       setTimeout(() => {
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: "I can help you plan your perfect trip! Ask me about destinations, travel plans, or specific itineraries."
+          content: "I can help you plan your perfect trip! Ask me about destinations, travel plans, or specific itineraries. I can even generate a custom PDF itinerary for you."
         }]);
         setLoading(false);
       }, 800);
@@ -168,6 +226,15 @@ const AIAssistant = () => {
     setConversation(prev => [...prev, {
       role: 'assistant', 
       content: "I'd be happy to help plan your trip! Which destination are you interested in visiting?"
+    }]);
+    setAskingDestination(true);
+  };
+
+  // Function to generate PDF directly
+  const startPdfGeneration = () => {
+    setConversation(prev => [...prev, {
+      role: 'assistant', 
+      content: "I can create a custom PDF itinerary for you. Which destination are you interested in visiting?"
     }]);
     setAskingDestination(true);
   };
@@ -238,9 +305,9 @@ const AIAssistant = () => {
                     ? "Enter number of days..." 
                     : "Ask me about your trip..."}
                 className="flex-1"
-                disabled={loading}
+                disabled={loading || generatingPdf}
               />
-              <Button type="submit" size="icon" disabled={loading}>
+              <Button type="submit" size="icon" disabled={loading || generatingPdf}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
@@ -259,9 +326,9 @@ const AIAssistant = () => {
                 variant="outline" 
                 size="sm" 
                 className="text-xs"
-                onClick={() => handlePresetQuery("What's the weather like in Paris?")}
+                onClick={() => handlePresetQuery("Generate a PDF itinerary")}
               >
-                <span>Weather for Paris</span>
+                <span>Generate PDF</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -275,12 +342,18 @@ const AIAssistant = () => {
 
             {/* Planning action buttons */}
             {!askingDestination && !askingDuration && conversation.length === 0 && (
-              <div className="mt-4">
+              <div className="mt-4 grid grid-cols-1 gap-2">
                 <Button 
                   className="w-full bg-gradient-to-r from-ocean-500 to-teal-500"
                   onClick={startTravelPlanning}
                 >
                   <MapPin className="h-4 w-4 mr-2" /> Start Planning Your Trip
+                </Button>
+                <Button 
+                  className="w-full bg-gradient-to-r from-sunset-500 to-sunset-600"
+                  onClick={startPdfGeneration}
+                >
+                  <FileText className="h-4 w-4 mr-2" /> Generate PDF Itinerary
                 </Button>
               </div>
             )}
