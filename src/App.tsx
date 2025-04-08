@@ -11,8 +11,14 @@ import Signup from "@/pages/Signup";
 import Signin from "@/pages/Signin";
 import NotFound from "@/pages/NotFound";
 import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    // Debug loading to check if App is rendering properly
+    console.log("App component mounted and rendering");
+  }, []);
+
   return (
     <Routes>
       <Route path="/" element={<Index />} />

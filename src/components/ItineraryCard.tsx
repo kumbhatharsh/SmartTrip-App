@@ -1,4 +1,3 @@
-
 import { Itinerary } from "@/lib/mockData";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, CheckCircle, CalendarDays } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface ItineraryCardProps {
   itinerary: Itinerary;
@@ -13,6 +13,7 @@ interface ItineraryCardProps {
 
 const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Format the dates to display them in a more readable format
   const formatDate = (dateStr: string) => {
@@ -31,6 +32,8 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
   // Generate a sample detailed itinerary for the card
   const handleViewItinerary = () => {
     try {
+      console.log("View itinerary clicked for:", itinerary.title);
+      
       // Create a detailed itinerary from the card data
       const detailedItinerary = {
         destination: itinerary.destination,
@@ -137,6 +140,12 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
 
       console.log("Navigating to itinerary details with data:", detailedItinerary);
       
+      // Show toast notification
+      toast({
+        title: "Loading Itinerary",
+        description: `Preparing details for ${itinerary.destination}`,
+      });
+      
       // Navigate to the itinerary details page with the sample data
       navigate("/itinerary-details", { 
         state: { 
@@ -145,6 +154,11 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
       });
     } catch (error) {
       console.error("Error navigating to itinerary details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load itinerary details. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
