@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -6,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Plane, Hotel, Utensils, Info } from "lucide-react";
+import { Calendar, Clock, MapPin, Plane, Hotel, Utensils, Info, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +61,6 @@ interface DetailedItinerary {
   tips: string[];
 }
 
-// Default Paris itinerary for fallback
 const parisItinerary: DetailedItinerary = {
   destination: "Paris, France",
   duration: "5 days",
@@ -164,17 +162,16 @@ const ItineraryDetails = () => {
   const { toast } = useToast();
   const [itinerary, setItinerary] = useState<DetailedItinerary | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     try {
-      // Extract itinerary data from location state
+      console.log("Location state:", location.state);
       if (location.state?.itinerary) {
         console.log("Itinerary data found in location state:", location.state.itinerary);
         setItinerary(location.state.itinerary);
       } else {
         console.log("No itinerary data in location state, using fallback");
-        // Use fallback data when navigating directly to this page
         setItinerary(parisItinerary);
         toast({
           title: "Using default itinerary",
@@ -187,10 +184,12 @@ const ItineraryDetails = () => {
         console.log("PDF URL found:", location.state.pdfUrl);
         setPdfUrl(location.state.pdfUrl);
       }
+      
+      setLoading(false);
     } catch (error) {
       console.error("Error processing itinerary data:", error);
-      // Fallback to default itinerary if there's an error
       setItinerary(parisItinerary);
+      setLoading(false);
       toast({
         variant: "destructive",
         title: "Error loading itinerary",
@@ -200,7 +199,25 @@ const ItineraryDetails = () => {
     }
   }, [location.state, toast]);
 
-  // If still loading, show loading state
+  const handlePdfAction = () => {
+    if (!pdfUrl) {
+      toast({
+        variant: "destructive",
+        title: "No PDF available",
+        description: "The PDF version of this itinerary is not available.",
+      });
+      return;
+    }
+    
+    console.log("Opening PDF URL:", pdfUrl);
+    window.open(pdfUrl, "_blank");
+    
+    toast({
+      title: "Opening PDF",
+      description: "The PDF is opening in a new tab",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -209,7 +226,7 @@ const ItineraryDetails = () => {
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Loading Itinerary...</h1>
             <div className="flex justify-center">
-              <div className="w-12 h-12 border-4 border-ocean-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
         </main>
@@ -218,7 +235,6 @@ const ItineraryDetails = () => {
     );
   }
 
-  // If no itinerary was found in state, show error
   if (!itinerary) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -239,7 +255,6 @@ const ItineraryDetails = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        {/* Hero section with destination and quick details */}
         <div className="bg-gradient-to-r from-teal-500 to-ocean-600 text-white py-12">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
@@ -260,10 +275,11 @@ const ItineraryDetails = () => {
               {pdfUrl && (
                 <div className="mb-6">
                   <Button 
-                    className="bg-sunset-500 hover:bg-sunset-600"
-                    onClick={() => window.open(pdfUrl, "_blank")}
+                    className="bg-sunset-500 hover:bg-sunset-600 flex items-center"
+                    onClick={handlePdfAction}
                   >
-                    Download PDF Itinerary
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Full PDF Itinerary
                   </Button>
                 </div>
               )}
@@ -271,7 +287,6 @@ const ItineraryDetails = () => {
           </div>
         </div>
 
-        {/* Main content with tabs */}
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="schedule" className="w-full max-w-4xl mx-auto">
             <TabsList className="grid grid-cols-5 mb-8">
@@ -284,7 +299,6 @@ const ItineraryDetails = () => {
               <TabsTrigger value="dining">Dining</TabsTrigger>
             </TabsList>
 
-            {/* Daily Schedule */}
             <TabsContent value="schedule" className="space-y-6">
               <h2 className="text-2xl font-bold mb-4">Daily Schedule</h2>
               {itinerary.dailySchedule.map((day, index) => (
@@ -313,7 +327,6 @@ const ItineraryDetails = () => {
               ))}
             </TabsContent>
 
-            {/* Attractions */}
             <TabsContent value="attractions" className="space-y-6">
               <h2 className="text-2xl font-bold mb-4">Must-See Attractions</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -332,7 +345,6 @@ const ItineraryDetails = () => {
               </div>
             </TabsContent>
 
-            {/* Hotels */}
             <TabsContent value="hotels" className="space-y-6">
               <h2 className="text-2xl font-bold mb-4">Recommended Hotels</h2>
               <div className="space-y-4">
@@ -364,7 +376,6 @@ const ItineraryDetails = () => {
               </div>
             </TabsContent>
 
-            {/* Flights */}
             {itinerary.flights.length > 0 && (
               <TabsContent value="flights" className="space-y-6">
                 <h2 className="text-2xl font-bold mb-4">Flight Options</h2>
@@ -398,7 +409,6 @@ const ItineraryDetails = () => {
               </TabsContent>
             )}
 
-            {/* Dining */}
             <TabsContent value="dining" className="space-y-6">
               <h2 className="text-2xl font-bold mb-4">Dining Recommendations</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -421,7 +431,6 @@ const ItineraryDetails = () => {
             </TabsContent>
           </Tabs>
 
-          {/* Travel Tips */}
           <div className="max-w-4xl mx-auto mt-12 bg-gray-50 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4 flex items-center">
               <Info className="h-5 w-5 mr-2 text-ocean-500" />

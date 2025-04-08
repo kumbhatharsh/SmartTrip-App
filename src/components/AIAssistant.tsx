@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,8 +232,10 @@ const AIAssistant = () => {
         const endDate = new Date(tripPlan.endDate);
         const tripDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
         
-        // Call the edge function to generate the PDF
-        const response = await fetch("/api/generate-itinerary", {
+        console.log("Calling generate-itinerary function with data:", tripPlan);
+        
+        // Call the edge function to generate the PDF - use the full URL
+        const response = await fetch("https://id-preview--fb4aa40e-e836-4b4c-ab63-dd2b5c0a16cc.functions.supabase.co/generate-itinerary", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -252,21 +253,32 @@ const AIAssistant = () => {
         });
         
         if (!response.ok) {
-          throw new Error("Failed to generate itinerary");
+          throw new Error(`Failed to generate itinerary: ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log("API response:", data);
         
         // Check if the API returned a result property containing the PDF URL
         if (data.result) {
           setPlanningState("displayingResults");
           setConversation(prev => [...prev, {
             role: 'assistant', 
-            content: `I've created your custom itinerary for your trip to ${tripPlan.destination}! Your browser should open it in a new tab. If it doesn't, you can access it here: ${data.result}`
+            content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
           }]);
           
-          // Open the PDF in a new tab
-          window.open(data.result, "_blank");
+          // Navigate to itinerary details with PDF URL and fallback data
+          navigate("/itinerary-details", { 
+            state: { 
+              itinerary: data.fallbackData,
+              pdfUrl: data.result
+            } 
+          });
+          
+          toast({
+            title: "Success!",
+            description: "Your custom itinerary has been generated",
+          });
           
           // Save the trip details
           try {
@@ -293,16 +305,41 @@ const AIAssistant = () => {
           } catch (error) {
             console.error("Error finding itineraries:", error);
           }
+        } else if (data.fallbackData) {
+          // If no PDF but we have fallback data, use that
+          setPlanningState("displayingResults");
+          setConversation(prev => [...prev, {
+            role: 'assistant', 
+            content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
+          }]);
+          
+          // Navigate to itinerary details with fallback data
+          navigate("/itinerary-details", { 
+            state: { 
+              itinerary: data.fallbackData
+            } 
+          });
+          
+          toast({
+            title: "Itinerary Ready",
+            description: "Your itinerary has been generated",
+          });
         } else {
-          throw new Error("No PDF URL in the response");
+          throw new Error("No itinerary data in the response");
         }
       } catch (error) {
-        console.error("Error generating PDF:", error);
+        console.error("Error generating itinerary:", error);
         setPlanningState("idle");
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: `I'm sorry, I had trouble generating your PDF itinerary. Please try again later.`
+          content: `I'm sorry, I had trouble generating your itinerary. Please try again later. Error: ${error.message}`
         }]);
+        
+        toast({
+          title: "Error",
+          description: "Failed to generate your itinerary. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -400,7 +437,7 @@ const AIAssistant = () => {
       },
       {
         role: 'assistant', 
-        content: `Thank you for providing your trip details! I'm now generating a custom PDF itinerary for your trip to ${tripPlan.destination}. This will take a moment...`
+        content: `Thank you for providing your trip details! I'm now generating a custom itinerary for your trip to ${tripPlan.destination}. This will take a moment...`
       }
     ]);
     
@@ -410,8 +447,10 @@ const AIAssistant = () => {
       const endDate = new Date(tripPlan.endDate);
       const tripDuration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)));
       
-      // Call the edge function to generate the PDF
-      const response = await fetch("/api/generate-itinerary", {
+      console.log("Calling generate-itinerary function with form data:", tripPlan);
+      
+      // Call the edge function to generate the PDF - use the full URL
+      const response = await fetch("https://id-preview--fb4aa40e-e836-4b4c-ab63-dd2b5c0a16cc.functions.supabase.co/generate-itinerary", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -429,33 +468,38 @@ const AIAssistant = () => {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to generate itinerary");
+        throw new Error(`Failed to generate itinerary: ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log("Form API response:", data);
       
-      // Check if the API returned a result property containing the PDF URL
-      if (data.result) {
+      // Navigate to itinerary details with data
+      if (data.result || data.fallbackData) {
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: `I've created your custom itinerary for your trip to ${tripPlan.destination}! Your browser should open it in a new tab. If it doesn't, you can access it here: ${data.result}`
+          content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
         }]);
         
-        // Open the PDF in a new tab
-        window.open(data.result, "_blank");
+        navigate("/itinerary-details", { 
+          state: { 
+            itinerary: data.fallbackData,
+            pdfUrl: data.result
+          } 
+        });
         
         toast({
           title: "Success",
           description: "Your custom itinerary has been generated",
         });
       } else {
-        throw new Error("No PDF URL in the response");
+        throw new Error("No itinerary data in the response");
       }
     } catch (error) {
       console.error("Error generating PDF:", error);
       setConversation(prev => [...prev, {
         role: 'assistant', 
-        content: `I'm sorry, I had trouble generating your PDF itinerary. Please try again later.`
+        content: `I'm sorry, I had trouble generating your itinerary. Please try again later. Error: ${error.message}`
       }]);
       
       toast({
