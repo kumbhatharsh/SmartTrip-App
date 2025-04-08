@@ -1,3 +1,4 @@
+
 // Follow this setup guide to integrate the Deno runtime into your application:
 // https://deno.land/manual/examples/deploy_node_server
 
@@ -17,8 +18,7 @@ interface ItineraryRequest {
 
 interface ItineraryResponse {
   success: boolean;
-  result: string;
-  fallbackData?: DetailedItinerary;
+  itinerary: DetailedItinerary;
   error?: string;
 }
 
@@ -40,7 +40,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
-// Generate a detailed itinerary as fallback when the PDF service fails
+// Generate a detailed itinerary based on the request parameters
 function generateDetailedItinerary(city: string, interests: string, startDate?: string, endDate?: string, departureCity?: string, travelers?: number, budget?: number): DetailedItinerary {
   // Calculate duration in days if dates provided
   let duration = "5 days"; // Default
@@ -283,8 +283,8 @@ serve(async (req) => {
     
     console.log(`Generating itinerary for ${city} with details: ${interests}`);
     
-    // Generate detailed itinerary as fallback 
-    const fallbackItinerary = generateDetailedItinerary(
+    // Generate detailed itinerary using our internal function
+    const generatedItinerary = generateDetailedItinerary(
       city, 
       interests, 
       requestData.startDate, 
@@ -294,52 +294,21 @@ serve(async (req) => {
       requestData.budget
     );
 
-    try {
-      // Define the Gradio endpoint - for demo purposes, we'll use a mock URL
-      const gradioEndpoint = "https://dfc9ecfbd25bebb4ed.gradio.live/predict";
-      
-      console.log("Attempting to call Gradio API at:", gradioEndpoint);
-      
-      // Create a simulated PDF URL (since the actual Gradio endpoint might be offline)
-      const mockPdfUrl = "https://example.com/itinerary.pdf";
-      
-      // Return the response with the PDF URL and fallback data
-      console.log("Returning success response with fallback data");
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          result: mockPdfUrl,  // Use a mock URL for testing
-          fallbackData: fallbackItinerary 
-        }),
-        { 
-          status: 200,
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
+    // Return the response with the generated itinerary
+    console.log("Returning generated itinerary");
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        itinerary: generatedItinerary
+      }),
+      { 
+        status: 200,
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders
         }
-      );
-    } catch (gradioError) {
-      console.error("Error with Gradio API:", gradioError);
-      
-      // Return success with fallback data but no PDF URL
-      console.log("Returning fallback data due to Gradio API error");
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          result: null,
-          fallbackData: fallbackItinerary,
-          error: gradioError.message 
-        }),
-        { 
-          status: 200,
-          headers: { 
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
-      );
-    }
+      }
+    );
   } catch (error) {
     console.error("Error generating itinerary:", error);
     

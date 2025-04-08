@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, MapPin, FileText } from "lucide-react";
+import { Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, MapPin, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -58,7 +59,7 @@ const AIAssistant = () => {
   const [conversation, setConversation] = useState<{role: string, content: string}[]>([]);
   const [planningState, setPlanningState] = useState<PlanningState>("idle");
   const [tripPlan, setTripPlan] = useState<TripPlan>(defaultTripPlan);
-  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [showDetailedForm, setShowDetailedForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -223,7 +224,7 @@ const AIAssistant = () => {
       
       setConversation(prev => [...prev, {
         role: 'assistant', 
-        content: `Thank you for providing all the details! I'm now generating a custom PDF itinerary for your trip to ${tripPlan.destination}. This will take a moment...`
+        content: `Thank you for providing all the details! I'm now generating a custom itinerary for your trip to ${tripPlan.destination}. This will take a moment...`
       }]);
       
       try {
@@ -234,11 +235,12 @@ const AIAssistant = () => {
         
         console.log("Calling generate-itinerary function with data:", tripPlan);
         
-        // Call the edge function to generate the PDF - use the full URL
-        const response = await fetch("https://id-preview--fb4aa40e-e836-4b4c-ab63-dd2b5c0a16cc.functions.supabase.co/generate-itinerary", {
+        // Call the edge function to generate the itinerary
+        const response = await fetch("https://roqopwfyuujaqcviejok.supabase.co/functions/v1/generate-itinerary", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabase.auth.getSession()}`
           },
           body: JSON.stringify({
             destination: tripPlan.destination,
@@ -259,20 +261,17 @@ const AIAssistant = () => {
         const data = await response.json();
         console.log("API response:", data);
         
-        // Check if the API returned a result property containing the PDF URL
-        if (data.result) {
+        // Check if the API returned an itinerary
+        if (data.success && data.itinerary) {
           setPlanningState("displayingResults");
           setConversation(prev => [...prev, {
             role: 'assistant', 
             content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
           }]);
           
-          // Navigate to itinerary details with PDF URL and fallback data
+          // Navigate to itinerary details with the data
           navigate("/itinerary-details", { 
-            state: { 
-              itinerary: data.fallbackData,
-              pdfUrl: data.result
-            } 
+            state: { itinerary: data.itinerary }
           });
           
           toast({
@@ -305,25 +304,6 @@ const AIAssistant = () => {
           } catch (error) {
             console.error("Error finding itineraries:", error);
           }
-        } else if (data.fallbackData) {
-          // If no PDF but we have fallback data, use that
-          setPlanningState("displayingResults");
-          setConversation(prev => [...prev, {
-            role: 'assistant', 
-            content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
-          }]);
-          
-          // Navigate to itinerary details with fallback data
-          navigate("/itinerary-details", { 
-            state: { 
-              itinerary: data.fallbackData
-            } 
-          });
-          
-          toast({
-            title: "Itinerary Ready",
-            description: "Your itinerary has been generated",
-          });
         } else {
           throw new Error("No itinerary data in the response");
         }
@@ -380,7 +360,7 @@ const AIAssistant = () => {
       setTimeout(() => {
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: "I can help you plan your perfect trip! Just ask me to plan a trip, and I'll collect all the necessary details to create a personalized PDF itinerary for you. You can also use the form for quicker input."
+          content: "I can help you plan your perfect trip! Just ask me to plan a trip, and I'll collect all the necessary details to create a personalized itinerary for you. You can also use the form for quicker input."
         }]);
         setLoading(false);
       }, 800);
@@ -407,7 +387,7 @@ const AIAssistant = () => {
     setPlanningState("askingDestination");
   };
 
-  // Function to generate PDF directly
+  // Function to open detailed form
   const openDetailedForm = () => {
     setShowDetailedForm(true);
   };
@@ -425,7 +405,7 @@ const AIAssistant = () => {
       return;
     }
     
-    setGeneratingPdf(true);
+    setGeneratingItinerary(true);
     setShowDetailedForm(false);
     
     // Add messages to conversation
@@ -449,11 +429,12 @@ const AIAssistant = () => {
       
       console.log("Calling generate-itinerary function with form data:", tripPlan);
       
-      // Call the edge function to generate the PDF - use the full URL
-      const response = await fetch("https://id-preview--fb4aa40e-e836-4b4c-ab63-dd2b5c0a16cc.functions.supabase.co/generate-itinerary", {
+      // Call the edge function to generate the itinerary
+      const response = await fetch("https://roqopwfyuujaqcviejok.supabase.co/functions/v1/generate-itinerary", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabase.auth.getSession()}`
         },
         body: JSON.stringify({
           destination: tripPlan.destination,
@@ -475,17 +456,14 @@ const AIAssistant = () => {
       console.log("Form API response:", data);
       
       // Navigate to itinerary details with data
-      if (data.result || data.fallbackData) {
+      if (data.success && data.itinerary) {
         setConversation(prev => [...prev, {
           role: 'assistant', 
           content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
         }]);
         
         navigate("/itinerary-details", { 
-          state: { 
-            itinerary: data.fallbackData,
-            pdfUrl: data.result
-          } 
+          state: { itinerary: data.itinerary }
         });
         
         toast({
@@ -496,7 +474,7 @@ const AIAssistant = () => {
         throw new Error("No itinerary data in the response");
       }
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("Error generating itinerary:", error);
       setConversation(prev => [...prev, {
         role: 'assistant', 
         content: `I'm sorry, I had trouble generating your itinerary. Please try again later. Error: ${error.message}`
@@ -508,7 +486,7 @@ const AIAssistant = () => {
         variant: "destructive"
       });
     } finally {
-      setGeneratingPdf(false);
+      setGeneratingItinerary(false);
     }
   };
 
@@ -583,9 +561,9 @@ const AIAssistant = () => {
                   "Ask me about your trip..."
                 }
                 className="flex-1"
-                disabled={loading || generatingPdf || planningState === "generatingItinerary"}
+                disabled={loading || generatingItinerary || planningState === "generatingItinerary"}
               />
-              <Button type="submit" size="icon" disabled={loading || generatingPdf || planningState === "generatingItinerary"}>
+              <Button type="submit" size="icon" disabled={loading || generatingItinerary || planningState === "generatingItinerary"}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
@@ -662,7 +640,7 @@ const AIAssistant = () => {
           <DialogHeader>
             <DialogTitle>Plan Your Perfect Trip</DialogTitle>
             <DialogDescription>
-              Enter your travel details and I'll generate a custom PDF itinerary for you.
+              Enter your travel details and I'll generate a custom itinerary for you.
             </DialogDescription>
           </DialogHeader>
           
@@ -766,8 +744,8 @@ const AIAssistant = () => {
               <Button variant="outline" type="button" onClick={() => setShowDetailedForm(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={generatingPdf}>
-                {generatingPdf ? "Generating..." : "Generate Itinerary"}
+              <Button type="submit" disabled={generatingItinerary}>
+                {generatingItinerary ? "Generating..." : "Generate Itinerary"}
               </Button>
             </DialogFooter>
           </form>

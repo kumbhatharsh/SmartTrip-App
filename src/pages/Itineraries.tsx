@@ -52,8 +52,7 @@ const Itineraries = () => {
   const [destinationInput, setDestinationInput] = useState("");
   const [durationInput, setDurationInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
+  const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [detailedItinerary, setDetailedItinerary] = useState<DetailedItinerary | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -106,7 +105,7 @@ const Itineraries = () => {
     }
   };
 
-  // Generate PDF itinerary with AI
+  // Generate AI itinerary
   const generateAIItinerary = async (destination: string, duration: string) => {
     if (!destination) {
       toast({
@@ -117,13 +116,14 @@ const Itineraries = () => {
       return;
     }
 
-    setGeneratingPdf(true);
+    setGeneratingItinerary(true);
     
     try {
-      const response = await fetch("/api/generate-itinerary", {
+      const response = await fetch("https://roqopwfyuujaqcviejok.supabase.co/functions/v1/generate-itinerary", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabase.auth.getSession()}`
         },
         body: JSON.stringify({
           city: destination,
@@ -136,40 +136,14 @@ const Itineraries = () => {
       }
       
       const data = await response.json();
+      console.log("AI generation response:", data);
       
-      if (data.result) {
-        // Store the PDF URL
-        setGeneratedPdfUrl(data.result);
+      // Navigate to itinerary details with data
+      if (data.success && data.itinerary) {
+        setDetailedItinerary(data.itinerary);
         
-        if (data.fallbackData) {
-          // Store the detailed itinerary data
-          setDetailedItinerary(data.fallbackData);
-          
-          // Navigate to the detailed itinerary page
-          navigate('/itinerary-details', { 
-            state: { 
-              itinerary: data.fallbackData,
-              pdfUrl: data.result 
-            } 
-          });
-        } else {
-          // If no fallback data but we have PDF, open it in new tab
-          window.open(data.result, "_blank");
-        }
-        
-        toast({
-          title: "Success",
-          description: "Your custom itinerary has been generated",
-        });
-      } else if (data.fallbackData) {
-        // If we have fallback data but no PDF, still show the itinerary
-        setDetailedItinerary(data.fallbackData);
-        
-        // Navigate to the detailed itinerary page
-        navigate('/itinerary-details', { 
-          state: { 
-            itinerary: data.fallbackData
-          } 
+        navigate("/itinerary-details", { 
+          state: { itinerary: data.itinerary }
         });
         
         toast({
@@ -187,7 +161,7 @@ const Itineraries = () => {
         variant: "destructive"
       });
     } finally {
-      setGeneratingPdf(false);
+      setGeneratingItinerary(false);
     }
   };
 
@@ -260,13 +234,13 @@ const Itineraries = () => {
                 <Button 
                   className="bg-ocean-500 hover:bg-ocean-600 px-8"
                   onClick={() => generateAIItinerary(destinationInput, durationInput)}
-                  disabled={generatingPdf}
+                  disabled={generatingItinerary}
                 >
-                  {generatingPdf ? 
+                  {generatingItinerary ? 
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 
                     <FileText className="h-4 w-4 mr-2" />
                   }
-                  {generatingPdf ? "Generating..." : "Create AI Itinerary"}
+                  {generatingItinerary ? "Generating..." : "Create AI Itinerary"}
                 </Button>
               </div>
             </div>
@@ -304,13 +278,13 @@ const Itineraries = () => {
                   variant="outline" 
                   className="bg-white"
                   onClick={() => generateAIItinerary(searchDestination, searchDuration)}
-                  disabled={generatingPdf}
+                  disabled={generatingItinerary}
                 >
-                  {generatingPdf ? 
+                  {generatingItinerary ? 
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : 
                     <FileText className="h-3 w-3 mr-1" />
                   }
-                  {generatingPdf ? "Generating..." : "Create AI Itinerary"}
+                  {generatingItinerary ? "Generating..." : "Create AI Itinerary"}
                 </Button>
               </div>
             </div>
