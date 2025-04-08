@@ -4,10 +4,23 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-interface GradioRequest {
+interface ItineraryRequest {
   city: string;
   interests: string;
+  destination?: string;
+  departureCity?: string;
+  startDate?: string;
+  endDate?: string;
+  travelers?: number;
+  budget?: number;
+  preferences?: string;
 }
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type"
+};
 
 serve(async (req) => {
   // Handle CORS preflight request
@@ -16,33 +29,51 @@ serve(async (req) => {
       null,
       { 
         status: 204,
-        headers: { 
-          "Access-Control-Allow-Origin": "*", 
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
-        }
+        headers: corsHeaders
       }
     );
   }
   
   try {
     // Extract the body from the request
-    const { city, interests } = await req.json() as GradioRequest;
+    const requestData = await req.json() as ItineraryRequest;
     
-    if (!city) {
+    if (!requestData.city && !requestData.destination) {
       return new Response(
-        JSON.stringify({ error: "City is required" }),
+        JSON.stringify({ error: "Destination is required" }),
         { 
           status: 400,
           headers: { 
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
+            ...corsHeaders
           }
         }
       );
     }
 
-    console.log(`Generating itinerary for ${city} with interests: ${interests}`);
+    // Use destination as city if provided
+    const city = requestData.destination || requestData.city;
+    
+    // Build the interests string from all available parameters
+    let interestsArray = [];
+    
+    if (requestData.interests) interestsArray.push(requestData.interests);
+    if (requestData.departureCity) interestsArray.push(`Departing from ${requestData.departureCity}`);
+    if (requestData.startDate && requestData.endDate) {
+      interestsArray.push(`From ${requestData.startDate} to ${requestData.endDate}`);
+    }
+    if (requestData.travelers) interestsArray.push(`For ${requestData.travelers} travelers`);
+    if (requestData.budget) interestsArray.push(`Budget around $${requestData.budget}`);
+    if (requestData.preferences) interestsArray.push(requestData.preferences);
+    
+    // If interests array is empty, use duration as fallback
+    if (interestsArray.length === 0 && requestData.interests) {
+      interestsArray.push(requestData.interests);
+    }
+    
+    const interests = interestsArray.join(". ");
+    
+    console.log(`Generating itinerary for ${city} with details: ${interests}`);
     
     // Define the Gradio endpoint
     const gradioEndpoint = "https://dfc9ecfbd25bebb4ed.gradio.live/predict";
@@ -77,9 +108,7 @@ serve(async (req) => {
         status: 200,
         headers: { 
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*", // CORS header
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
+          ...corsHeaders
         }
       }
     );
@@ -92,9 +121,7 @@ serve(async (req) => {
         status: 500,
         headers: { 
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*", // CORS header
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
+          ...corsHeaders
         }
       }
     );
