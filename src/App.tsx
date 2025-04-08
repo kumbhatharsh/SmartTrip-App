@@ -1,3 +1,4 @@
+
 import Index from "@/pages/Index";
 import Flights from "@/pages/Flights";
 import Hotels from "@/pages/Hotels";

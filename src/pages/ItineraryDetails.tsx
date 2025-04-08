@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, Plane, Hotel, Utensils, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 interface Attraction {
   name: string;
@@ -60,22 +62,161 @@ interface DetailedItinerary {
   tips: string[];
 }
 
+// Default Paris itinerary for fallback
+const parisItinerary: DetailedItinerary = {
+  destination: "Paris, France",
+  duration: "5 days",
+  dates: "Flexible dates",
+  attractions: [
+    { name: "Eiffel Tower", description: "Iconic iron tower offering spectacular city views", recommendedTime: "2-3 hours" },
+    { name: "Louvre Museum", description: "World's largest art museum and home to the Mona Lisa", recommendedTime: "Half day" },
+    { name: "Notre-Dame Cathedral", description: "Medieval Catholic cathedral with Gothic architecture", recommendedTime: "1-2 hours" },
+    { name: "Champs-Élysées", description: "Elegant avenue known for luxury shopping and cafés", recommendedTime: "2-3 hours" },
+    { name: "Montmartre", description: "Historic district with bohemian atmosphere and Sacré-Cœur Basilica", recommendedTime: "Half day" }
+  ],
+  hotels: [
+    { name: "Hôtel Plaza Athénée", address: "25 Avenue Montaigne, 75008 Paris", price: "€850/night", rating: 5 },
+    { name: "Le Meurice", address: "228 Rue de Rivoli, 75001 Paris", price: "€750/night", rating: 5 },
+    { name: "Hôtel de Crillon", address: "10 Place de la Concorde, 75008 Paris", price: "€800/night", rating: 5 },
+    { name: "Relais Christine", address: "3 Rue Christine, 75006 Paris", price: "€350/night", rating: 4 },
+    { name: "Hôtel des Grands Boulevards", address: "17 Boulevard Poissonnière, 75002 Paris", price: "€200/night", rating: 4 }
+  ],
+  flights: [
+    { airline: "Air France", flightNumber: "AF217", departure: "Mumbai 23:15", arrival: "Paris 04:30", price: "€650" },
+    { airline: "Lufthansa", flightNumber: "LH761", departure: "Mumbai 03:25", arrival: "Paris 12:45", price: "€580" },
+    { airline: "Emirates", flightNumber: "EK501", departure: "Mumbai 04:30", arrival: "Paris 13:15", price: "€720" },
+    { airline: "Qatar Airways", flightNumber: "QR556", departure: "Mumbai 03:55", arrival: "Paris 14:05", price: "€690" },
+    { airline: "Etihad Airways", flightNumber: "EY205", departure: "Mumbai 04:15", arrival: "Paris 15:30", price: "€650" }
+  ],
+  dailySchedule: [
+    {
+      day: "Day 1",
+      activities: [
+        { time: "09:00 AM", activity: "Breakfast at local café", location: "Le Marais district" },
+        { time: "10:30 AM", activity: "Visit Louvre Museum", location: "Rue de Rivoli" },
+        { time: "02:00 PM", activity: "Lunch at Café Marly", location: "93 Rue de Rivoli" },
+        { time: "04:00 PM", activity: "Seine River Cruise", location: "Near Pont Neuf" },
+        { time: "07:30 PM", activity: "Dinner", location: "Le Jules Verne at Eiffel Tower" }
+      ]
+    },
+    {
+      day: "Day 2",
+      activities: [
+        { time: "08:30 AM", activity: "Breakfast", location: "Hotel" },
+        { time: "10:00 AM", activity: "Visit Eiffel Tower", location: "Champ de Mars" },
+        { time: "01:00 PM", activity: "Lunch", location: "Le Suffren" },
+        { time: "03:00 PM", activity: "Arc de Triomphe and Champs-Élysées", location: "8th arrondissement" },
+        { time: "08:00 PM", activity: "Dinner", location: "L'Avenue" }
+      ]
+    },
+    {
+      day: "Day 3",
+      activities: [
+        { time: "09:00 AM", activity: "Breakfast", location: "Hotel" },
+        { time: "10:30 AM", activity: "Montmartre and Sacré-Cœur", location: "18th arrondissement" },
+        { time: "01:30 PM", activity: "Lunch", location: "La Maison Rose" },
+        { time: "03:30 PM", activity: "Musée d'Orsay", location: "1 Rue de la Légion d'Honneur" },
+        { time: "07:00 PM", activity: "Dinner", location: "Le Grand Véfour" }
+      ]
+    },
+    {
+      day: "Day 4",
+      activities: [
+        { time: "09:30 AM", activity: "Breakfast", location: "Hotel" },
+        { time: "11:00 AM", activity: "Notre-Dame Cathedral", location: "Île de la Cité" },
+        { time: "02:00 PM", activity: "Lunch", location: "Aux Anysetiers du Roy" },
+        { time: "03:30 PM", activity: "Luxembourg Gardens", location: "6th arrondissement" },
+        { time: "07:30 PM", activity: "Dinner", location: "L'Ambroisie" }
+      ]
+    },
+    {
+      day: "Day 5",
+      activities: [
+        { time: "08:30 AM", activity: "Breakfast", location: "Hotel" },
+        { time: "10:00 AM", activity: "Versailles Palace (day trip)", location: "Versailles" },
+        { time: "02:00 PM", activity: "Lunch", location: "La Flottille" },
+        { time: "06:00 PM", activity: "Return to Paris", location: "" },
+        { time: "08:30 PM", activity: "Farewell dinner", location: "Le Cinq" }
+      ]
+    }
+  ],
+  restaurants: [
+    { name: "Le Jules Verne", cuisine: "French fine dining", priceRange: "€€€€", address: "Eiffel Tower, 2nd floor" },
+    { name: "Septime", cuisine: "Modern French", priceRange: "€€€", address: "80 Rue de Charonne" },
+    { name: "Breizh Café", cuisine: "French (crêpes)", priceRange: "€€", address: "109 Rue Vieille du Temple" },
+    { name: "L'As du Fallafel", cuisine: "Middle Eastern", priceRange: "€", address: "34 Rue des Rosiers" },
+    { name: "Le Comptoir du Relais", cuisine: "French bistro", priceRange: "€€€", address: "9 Carrefour de l'Odéon" }
+  ],
+  tips: [
+    "Paris Museum Pass can save money if you plan to visit multiple museums",
+    "Metro is the most efficient way to travel around the city",
+    "Most attractions are closed on either Monday or Tuesday",
+    "Tipping is not required but rounding up for good service is appreciated",
+    "Learn a few basic French phrases - locals appreciate the effort",
+    "Be aware of pickpockets in tourist areas and on public transport",
+    "Make dinner reservations in advance, especially for high-end restaurants"
+  ]
+};
+
 const ItineraryDetails = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [itinerary, setItinerary] = useState<DetailedItinerary | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    // Extract itinerary data from location state
-    if (location.state?.itinerary) {
-      setItinerary(location.state.itinerary);
-    }
+    try {
+      // Extract itinerary data from location state
+      if (location.state?.itinerary) {
+        console.log("Itinerary data found in location state:", location.state.itinerary);
+        setItinerary(location.state.itinerary);
+      } else {
+        console.log("No itinerary data in location state, using fallback");
+        // Use fallback data when navigating directly to this page
+        setItinerary(parisItinerary);
+        toast({
+          title: "Using default itinerary",
+          description: "We're showing a sample Paris itinerary because no specific itinerary was provided.",
+          duration: 5000,
+        });
+      }
 
-    if (location.state?.pdfUrl) {
-      setPdfUrl(location.state.pdfUrl);
+      if (location.state?.pdfUrl) {
+        console.log("PDF URL found:", location.state.pdfUrl);
+        setPdfUrl(location.state.pdfUrl);
+      }
+    } catch (error) {
+      console.error("Error processing itinerary data:", error);
+      // Fallback to default itinerary if there's an error
+      setItinerary(parisItinerary);
+      toast({
+        variant: "destructive",
+        title: "Error loading itinerary",
+        description: "There was a problem loading your itinerary. We've loaded a sample one instead.",
+        duration: 5000,
+      });
     }
-  }, [location.state]);
+  }, [location.state, toast]);
+
+  // If still loading, show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow container mx-auto px-4 py-12">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Loading Itinerary...</h1>
+            <div className="flex justify-center">
+              <div className="w-12 h-12 border-4 border-ocean-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // If no itinerary was found in state, show error
   if (!itinerary) {
@@ -86,7 +227,7 @@ const ItineraryDetails = () => {
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">No Itinerary Data Found</h1>
             <p className="mb-6">Please return to the previous page and try generating an itinerary again.</p>
-            <Button onClick={() => window.history.back()}>Go Back</Button>
+            <Button onClick={() => navigate("/itineraries")}>Go to Itineraries</Button>
           </div>
         </main>
         <Footer />
@@ -298,6 +439,7 @@ const ItineraryDetails = () => {
         </div>
       </main>
       <Footer />
+      <Toaster />
     </div>
   );
 };

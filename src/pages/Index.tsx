@@ -1,3 +1,4 @@
+
 import HeroSection from "@/components/HeroSection";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,8 +11,12 @@ import LocalEvents from "@/components/LocalEvents";
 import { Button } from "@/components/ui/button";
 import { popularDestinations, popularHotels, popularFlights, popularItineraries } from "@/lib/mockData";
 import { MapPin, ArrowRight, Plane, Hotel, Calendar } from "lucide-react";
+import { Toaster } from "@/components/ui/toaster";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -26,7 +31,8 @@ const Index = () => {
               {popularDestinations.map((destination) => (
                 <div 
                   key={destination.id} 
-                  className="rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow relative group"
+                  className="rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow relative group cursor-pointer"
+                  onClick={() => navigate("/itineraries")}
                 >
                   <img 
                     src={destination.image} 
@@ -54,7 +60,7 @@ const Index = () => {
                 <Hotel className="h-6 w-6 text-ocean-600 mr-2" />
                 <h2 className="text-3xl font-bold">Popular Hotels</h2>
               </div>
-              <Button variant="link" className="text-ocean-600 flex items-center">
+              <Button variant="link" className="text-ocean-600 flex items-center" onClick={() => navigate("/hotels")}>
                 View all <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
@@ -74,7 +80,7 @@ const Index = () => {
                 <Plane className="h-6 w-6 text-ocean-600 mr-2" />
                 <h2 className="text-3xl font-bold">Popular Flights</h2>
               </div>
-              <Button variant="link" className="text-ocean-600 flex items-center">
+              <Button variant="link" className="text-ocean-600 flex items-center" onClick={() => navigate("/flights")}>
                 View all <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
@@ -105,7 +111,11 @@ const Index = () => {
               ))}
             </div>
             <div className="text-center mt-10">
-              <Button variant="outline" className="bg-white text-teal-700 hover:bg-white/90 px-8">
+              <Button 
+                variant="outline" 
+                className="bg-white text-teal-700 hover:bg-white/90 px-8"
+                onClick={() => navigate("/itineraries")}
+              >
                 Create Custom Itinerary
               </Button>
             </div>
@@ -163,6 +173,7 @@ const Index = () => {
       </main>
       <Footer />
       <AIAssistant />
+      <Toaster />
     </div>
   );
 };
