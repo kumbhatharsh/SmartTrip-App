@@ -3,13 +3,13 @@ import Index from "@/pages/Index";
 import Flights from "@/pages/Flights";
 import Hotels from "@/pages/Hotels";
 import Itineraries from "@/pages/Itineraries";
+import ItineraryDetails from "@/pages/ItineraryDetails";
 import MyTrips from "@/pages/MyTrips";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
 import Signup from "@/pages/Signup";
 import Signin from "@/pages/Signin";
 import NotFound from "@/pages/NotFound";
-import ItineraryDetails from "@/pages/ItineraryDetails";
 import { Routes, Route } from "react-router-dom";
 
 function App() {

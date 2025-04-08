@@ -30,116 +30,122 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
 
   // Generate a sample detailed itinerary for the card
   const handleViewItinerary = () => {
-    // Create a detailed itinerary from the card data
-    const detailedItinerary = {
-      destination: itinerary.destination,
-      duration: itinerary.duration,
-      dates: `${startDateFormatted} - ${endDateFormatted}`,
-      attractions: [
-        { 
-          name: "Popular Attraction", 
-          description: "A must-visit landmark in this destination", 
-          recommendedTime: "2-3 hours" 
-        },
-        { 
-          name: "Local Museum", 
-          description: "Fascinating exhibits about local culture and history", 
-          recommendedTime: "Half day" 
-        },
-        { 
-          name: "Scenic Viewpoint", 
-          description: "Spectacular panoramic views of the city", 
-          recommendedTime: "1 hour" 
-        },
-      ],
-      hotels: [
-        { 
-          name: "Luxury Hotel", 
-          address: "123 Main Street", 
-          price: "$300/night", 
-          rating: 5 
-        },
-        { 
-          name: "Boutique Stay", 
-          address: "456 Central Avenue", 
-          price: "$180/night", 
-          rating: 4 
-        },
-        { 
-          name: "Budget Friendly Inn", 
-          address: "789 Side Road", 
-          price: "$90/night", 
-          rating: 3 
-        },
-      ],
-      flights: [
-        { 
-          airline: "Major Airline", 
-          flightNumber: "MA123", 
-          departure: "Your City 10:00", 
-          arrival: `${itinerary.destination} 12:30`, 
-          price: "$450" 
-        },
-        { 
-          airline: "Budget Carrier", 
-          flightNumber: "BC456", 
-          departure: "Your City 14:15", 
-          arrival: `${itinerary.destination} 16:45`, 
-          price: "$320" 
-        },
-      ],
-      dailySchedule: [
-        {
-          day: "Day 1",
-          activities: [
-            { time: "09:00 AM", activity: "Breakfast at hotel", location: "Hotel dining room" },
-            { time: "10:30 AM", activity: "Visit main attraction", location: "City center" },
-            { time: "01:00 PM", activity: "Lunch at local restaurant", location: "Downtown" },
-            { time: "03:00 PM", activity: "Shopping and exploring", location: "Main street" },
-            { time: "07:30 PM", activity: "Dinner", location: "Recommended restaurant" }
-          ]
-        },
-        {
-          day: "Day 2",
-          activities: [
-            { time: "08:30 AM", activity: "Breakfast", location: "Café nearby" },
-            { time: "10:00 AM", activity: "Museum visit", location: "Local Museum" },
-            { time: "01:30 PM", activity: "Lunch", location: "Museum café" },
-            { time: "03:00 PM", activity: "Park and nature walk", location: "City Park" },
-            { time: "07:00 PM", activity: "Dinner", location: "Local favorite spot" }
-          ]
-        },
-        {
-          day: "Day 3",
-          activities: [
-            { time: "09:00 AM", activity: "Breakfast", location: "Hotel" },
-            { time: "10:30 AM", activity: "Day trip to nearby attraction", location: "Outside city" },
-            { time: "01:00 PM", activity: "Lunch", location: "Local eatery" },
-            { time: "03:30 PM", activity: "Return to hotel and relax", location: "Hotel" },
-            { time: "08:00 PM", activity: "Farewell dinner", location: "Upscale restaurant" }
-          ]
-        }
-      ],
-      restaurants: [
-        { name: "Gourmet Restaurant", cuisine: "Fine dining", priceRange: "$$$", address: "10 Luxury Lane" },
-        { name: "Local Favorite", cuisine: "Traditional", priceRange: "$$", address: "25 Main Street" },
-        { name: "Quick Bite", cuisine: "Café", priceRange: "$", address: "42 Side Street" },
-      ],
-      tips: [
-        "Check local weather before planning outdoor activities",
-        "Many museums are closed on Mondays",
-        "Public transportation is efficient and affordable",
-        "Remember to carry some local currency for small purchases",
-        "Try the local specialties at smaller, family-run restaurants"
-      ]
-    };
+    try {
+      // Create a detailed itinerary from the card data
+      const detailedItinerary = {
+        destination: itinerary.destination,
+        duration: itinerary.duration,
+        dates: `${startDateFormatted} - ${endDateFormatted}`,
+        attractions: [
+          { 
+            name: "Popular Attraction", 
+            description: "A must-visit landmark in this destination", 
+            recommendedTime: "2-3 hours" 
+          },
+          { 
+            name: "Local Museum", 
+            description: "Fascinating exhibits about local culture and history", 
+            recommendedTime: "Half day" 
+          },
+          { 
+            name: "Scenic Viewpoint", 
+            description: "Spectacular panoramic views of the city", 
+            recommendedTime: "1 hour" 
+          },
+        ],
+        hotels: [
+          { 
+            name: "Luxury Hotel", 
+            address: "123 Main Street", 
+            price: "$300/night", 
+            rating: 5 
+          },
+          { 
+            name: "Boutique Stay", 
+            address: "456 Central Avenue", 
+            price: "$180/night", 
+            rating: 4 
+          },
+          { 
+            name: "Budget Friendly Inn", 
+            address: "789 Side Road", 
+            price: "$90/night", 
+            rating: 3 
+          },
+        ],
+        flights: [
+          { 
+            airline: "Major Airline", 
+            flightNumber: "MA123", 
+            departure: "Your City 10:00", 
+            arrival: `${itinerary.destination} 12:30`, 
+            price: "$450" 
+          },
+          { 
+            airline: "Budget Carrier", 
+            flightNumber: "BC456", 
+            departure: "Your City 14:15", 
+            arrival: `${itinerary.destination} 16:45`, 
+            price: "$320" 
+          },
+        ],
+        dailySchedule: [
+          {
+            day: "Day 1",
+            activities: [
+              { time: "09:00 AM", activity: "Breakfast at hotel", location: "Hotel dining room" },
+              { time: "10:30 AM", activity: "Visit main attraction", location: "City center" },
+              { time: "01:00 PM", activity: "Lunch at local restaurant", location: "Downtown" },
+              { time: "03:00 PM", activity: "Shopping and exploring", location: "Main street" },
+              { time: "07:30 PM", activity: "Dinner", location: "Recommended restaurant" }
+            ]
+          },
+          {
+            day: "Day 2",
+            activities: [
+              { time: "08:30 AM", activity: "Breakfast", location: "Café nearby" },
+              { time: "10:00 AM", activity: "Museum visit", location: "Local Museum" },
+              { time: "01:30 PM", activity: "Lunch", location: "Museum café" },
+              { time: "03:00 PM", activity: "Park and nature walk", location: "City Park" },
+              { time: "07:00 PM", activity: "Dinner", location: "Local favorite spot" }
+            ]
+          },
+          {
+            day: "Day 3",
+            activities: [
+              { time: "09:00 AM", activity: "Breakfast", location: "Hotel" },
+              { time: "10:30 AM", activity: "Day trip to nearby attraction", location: "Outside city" },
+              { time: "01:00 PM", activity: "Lunch", location: "Local eatery" },
+              { time: "03:30 PM", activity: "Return to hotel and relax", location: "Hotel" },
+              { time: "08:00 PM", activity: "Farewell dinner", location: "Upscale restaurant" }
+            ]
+          }
+        ],
+        restaurants: [
+          { name: "Gourmet Restaurant", cuisine: "Fine dining", priceRange: "$$$", address: "10 Luxury Lane" },
+          { name: "Local Favorite", cuisine: "Traditional", priceRange: "$$", address: "25 Main Street" },
+          { name: "Quick Bite", cuisine: "Café", priceRange: "$", address: "42 Side Street" },
+        ],
+        tips: [
+          "Check local weather before planning outdoor activities",
+          "Many museums are closed on Mondays",
+          "Public transportation is efficient and affordable",
+          "Remember to carry some local currency for small purchases",
+          "Try the local specialties at smaller, family-run restaurants"
+        ]
+      };
 
-    // Navigate to the itinerary details page with the sample data
-    navigate("/itinerary-details", { 
-      state: { 
-        itinerary: detailedItinerary
-      } 
-    });
+      console.log("Navigating to itinerary details with data:", detailedItinerary);
+      
+      // Navigate to the itinerary details page with the sample data
+      navigate("/itinerary-details", { 
+        state: { 
+          itinerary: detailedItinerary
+        } 
+      });
+    } catch (error) {
+      console.error("Error navigating to itinerary details:", error);
+    }
   };
 
   return (
