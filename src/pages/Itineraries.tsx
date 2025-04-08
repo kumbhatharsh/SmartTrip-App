@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AIAssistant from "@/components/AIAssistant";
@@ -9,12 +10,24 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { popularItineraries } from "@/lib/mockData";
-import { Search, Calendar, MapPin, DollarSign, UsersRound, ArrowLeft, FileText } from "lucide-react";
+import { Search, Calendar, MapPin, DollarSign, UsersRound, ArrowLeft, FileText, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+
+interface DetailedItinerary {
+  destination: string;
+  duration: string;
+  dates: string;
+  attractions: Array<{name: string; description: string; recommendedTime: string}>;
+  hotels: Array<{name: string; address: string; price: string; rating: number}>;
+  flights: Array<{airline: string; flightNumber: string; departure: string; arrival: string; price: string}>;
+  dailySchedule: Array<{day: string; activities: Array<{time: string; activity: string; location: string}>}>;
+  restaurants: Array<{name: string; cuisine: string; priceRange: string; address: string}>;
+  tips: string[];
+}
 
 // Interface for Itinerary from supabase
 interface SupabaseItinerary {
@@ -41,7 +54,9 @@ const Itineraries = () => {
   const [loading, setLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
+  const [detailedItinerary, setDetailedItinerary] = useState<DetailedItinerary | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Check for search results from the AI assistant
   useEffect(() => {
@@ -91,8 +106,8 @@ const Itineraries = () => {
     }
   };
 
-  // Generate PDF itinerary with the Gradio API
-  const generatePdfItinerary = async (destination: string, duration: string) => {
+  // Generate PDF itinerary with AI
+  const generateAIItinerary = async (destination: string, duration: string) => {
     if (!destination) {
       toast({
         title: "Missing information",
@@ -123,19 +138,49 @@ const Itineraries = () => {
       const data = await response.json();
       
       if (data.result) {
-        // The response contains the PDF URL
+        // Store the PDF URL
         setGeneratedPdfUrl(data.result);
-        window.open(data.result, "_blank");
+        
+        if (data.fallbackData) {
+          // Store the detailed itinerary data
+          setDetailedItinerary(data.fallbackData);
+          
+          // Navigate to the detailed itinerary page
+          navigate('/itinerary-details', { 
+            state: { 
+              itinerary: data.fallbackData,
+              pdfUrl: data.result 
+            } 
+          });
+        } else {
+          // If no fallback data but we have PDF, open it in new tab
+          window.open(data.result, "_blank");
+        }
+        
+        toast({
+          title: "Success",
+          description: "Your custom itinerary has been generated",
+        });
+      } else if (data.fallbackData) {
+        // If we have fallback data but no PDF, still show the itinerary
+        setDetailedItinerary(data.fallbackData);
+        
+        // Navigate to the detailed itinerary page
+        navigate('/itinerary-details', { 
+          state: { 
+            itinerary: data.fallbackData
+          } 
+        });
         
         toast({
           title: "Success",
           description: "Your custom itinerary has been generated",
         });
       } else {
-        throw new Error("No PDF URL in the response");
+        throw new Error("No itinerary data in the response");
       }
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("Error generating itinerary:", error);
       toast({
         title: "Error",
         description: "Failed to generate your custom itinerary. Please try again.",
@@ -203,21 +248,25 @@ const Itineraries = () => {
                   />
                 </div>
               </div>
-              <div className="mt-4 flex justify-center gap-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <Button 
                   className="bg-sunset-500 hover:bg-sunset-600 px-8"
                   onClick={handleSearch}
                   disabled={loading}
                 >
-                  <Search className="h-4 w-4 mr-2" /> Find Itineraries
+                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                  Find Itineraries
                 </Button>
                 <Button 
                   className="bg-ocean-500 hover:bg-ocean-600 px-8"
-                  onClick={() => generatePdfItinerary(destinationInput, durationInput)}
+                  onClick={() => generateAIItinerary(destinationInput, durationInput)}
                   disabled={generatingPdf}
                 >
-                  <FileText className="h-4 w-4 mr-2" /> 
-                  {generatingPdf ? "Generating..." : "Generate PDF Itinerary"}
+                  {generatingPdf ? 
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 
+                    <FileText className="h-4 w-4 mr-2" />
+                  }
+                  {generatingPdf ? "Generating..." : "Create AI Itinerary"}
                 </Button>
               </div>
             </div>
@@ -254,11 +303,14 @@ const Itineraries = () => {
                   size="sm" 
                   variant="outline" 
                   className="bg-white"
-                  onClick={() => generatePdfItinerary(searchDestination, searchDuration)}
+                  onClick={() => generateAIItinerary(searchDestination, searchDuration)}
                   disabled={generatingPdf}
                 >
-                  <FileText className="h-3 w-3 mr-1" /> 
-                  {generatingPdf ? "Generating..." : "Generate PDF for this search"}
+                  {generatingPdf ? 
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : 
+                    <FileText className="h-3 w-3 mr-1" />
+                  }
+                  {generatingPdf ? "Generating..." : "Create AI Itinerary"}
                 </Button>
               </div>
             </div>
@@ -283,7 +335,7 @@ const Itineraries = () => {
             ) : (
               <Alert className="mb-6">
                 <AlertDescription>
-                  No itineraries found for your search criteria. Try different location or parameters.
+                  No itineraries found for your search criteria. Try different location or parameters, or use our AI to create a custom itinerary.
                 </AlertDescription>
               </Alert>
             )}
@@ -387,13 +439,19 @@ const Itineraries = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {popularItineraries.concat(popularItineraries).map((itinerary, index) => (
+                  {popularItineraries.map((itinerary, index) => (
                     <ItineraryCard key={`${itinerary.id}-${index}`} itinerary={itinerary} />
                   ))}
                 </div>
                 
                 <div className="flex justify-center space-x-4 mt-12">
-                  <Button className="bg-gradient-to-r from-teal-500 to-ocean-500 hover:from-teal-600 hover:to-ocean-600">
+                  <Button 
+                    className="bg-gradient-to-r from-teal-500 to-ocean-500 hover:from-teal-600 hover:to-ocean-600"
+                    onClick={() => {
+                      // Scroll to top to focus on the form
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
                     Create Custom Itinerary
                   </Button>
                   <Button variant="outline" className="border-teal-500 text-teal-600">
