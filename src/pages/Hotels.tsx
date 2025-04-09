@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ interface Hotel {
   amenities: string[];
   createdAt: string;
   updatedAt: string;
-  image?: string; // Added missing image property
+  image?: string;
 }
 
 const Hotels = () => {
@@ -35,10 +36,11 @@ const Hotels = () => {
   useEffect(() => {
     const fetchHotels = async () => {
       try {
+        // Using the correct table name "Hotel" instead of "hotels"
         const { data, error } = await supabase
-          .from("hotels")
+          .from("Hotel")
           .select("*")
-          .order("created_at", { ascending: false });
+          .order("createdAt", { ascending: false });
 
         if (error) {
           console.error("Error fetching hotels:", error);
@@ -50,7 +52,21 @@ const Hotels = () => {
         }
 
         if (data) {
-          setHotels(data);
+          // Ensure the data matches our Hotel interface
+          const formattedHotels = data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            location: item.location,
+            description: item.description,
+            price: item.price,
+            rating: item.rating,
+            availableRooms: item.availableRooms,
+            amenities: item.amenities || [],
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            image: item.image
+          }));
+          setHotels(formattedHotels);
         }
       } catch (error) {
         console.error("Unexpected error fetching hotels:", error);
