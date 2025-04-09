@@ -68,8 +68,11 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     
     console.log("API response:", result.data);
     
+    // Cast the result.data to string, as that's what processRawItinerary expects
+    const rawItineraryText = String(result.data);
+    
     // Process the raw text into structured data
-    const processedItinerary = processRawItinerary(result.data, request);
+    const processedItinerary = processRawItinerary(rawItineraryText, request);
     
     return processedItinerary;
   } catch (error) {
