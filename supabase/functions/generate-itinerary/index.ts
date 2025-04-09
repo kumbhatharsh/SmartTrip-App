@@ -1,19 +1,13 @@
-
 // Follow this setup guide to integrate the Deno runtime into your application:
 // https://deno.land/manual/examples/deploy_node_server
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 interface ItineraryRequest {
-  city: string;
-  interests: string;
-  destination?: string;
-  departureCity?: string;
-  startDate?: string;
-  endDate?: string;
-  travelers?: number;
-  budget?: number;
-  preferences?: string;
+  destination: string;
+  departureCity: string;
+  interests?: string;
+  duration?: string;
 }
 
 interface ItineraryResponse {
@@ -40,23 +34,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
-// Generate a detailed itinerary based on the request parameters
-function generateDetailedItinerary(city: string, interests: string, startDate?: string, endDate?: string, departureCity?: string, travelers?: number, budget?: number): DetailedItinerary {
-  // Calculate duration in days if dates provided
-  let duration = "5 days"; // Default
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    duration = `${days} days`;
-  }
-
+// Generate a detailed itinerary based on the request parameters - simplified for required parameters
+function generateDetailedItinerary(destination: string, departureCity: string, interests?: string, duration = "5 days"): DetailedItinerary {
   // Paris dummy data
-  if (city.toLowerCase().includes("paris")) {
+  if (destination.toLowerCase().includes("paris")) {
     return {
       destination: "Paris, France",
       duration,
-      dates: startDate && endDate ? `${startDate} to ${endDate}` : "Flexible dates",
+      dates: "Flexible dates",
       attractions: [
         { name: "Eiffel Tower", description: "Iconic iron tower offering spectacular city views", recommendedTime: "2-3 hours" },
         { name: "Louvre Museum", description: "World's largest art museum and home to the Mona Lisa", recommendedTime: "Half day" },
@@ -151,9 +136,9 @@ function generateDetailedItinerary(city: string, interests: string, startDate?: 
   
   // Generic fallback for other cities
   return {
-    destination: city,
+    destination,
     duration,
-    dates: startDate && endDate ? `${startDate} to ${endDate}` : "Flexible dates",
+    dates: "Flexible dates",
     attractions: [
       { name: "Popular Landmark", description: "Main attraction in the city", recommendedTime: "2-3 hours" },
       { name: "Local Museum", description: "Cultural heritage museum", recommendedTime: "Half day" },
@@ -168,13 +153,13 @@ function generateDetailedItinerary(city: string, interests: string, startDate?: 
       { name: "Budget Hotel", address: "Near Transportation Hub", price: "$90/night", rating: 3 },
       { name: "Hostel", address: "Tourist Area", price: "$40/night", rating: 2.5 }
     ],
-    flights: departureCity ? [
-      { airline: "Major Airline", flightNumber: "MA123", departure: `${departureCity} 10:00`, arrival: `${city} 12:30`, price: "$450" },
-      { airline: "Budget Airline", flightNumber: "BA456", departure: `${departureCity} 14:15`, arrival: `${city} 16:45`, price: "$320" },
-      { airline: "National Carrier", flightNumber: "NC789", departure: `${departureCity} 08:30`, arrival: `${city} 11:00`, price: "$480" },
-      { airline: "International Airline", flightNumber: "IA012", departure: `${departureCity} 22:45`, arrival: `${city} 01:15`, price: "$400" },
-      { airline: "Regional Airline", flightNumber: "RA345", departure: `${departureCity} 16:30`, arrival: `${city} 19:00`, price: "$380" }
-    ] : [],
+    flights: [
+      { airline: "Major Airline", flightNumber: "MA123", departure: `${departureCity} 10:00`, arrival: `${destination} 12:30`, price: "$450" },
+      { airline: "Budget Airline", flightNumber: "BA456", departure: `${departureCity} 14:15`, arrival: `${destination} 16:45`, price: "$320" },
+      { airline: "National Carrier", flightNumber: "NC789", departure: `${departureCity} 08:30`, arrival: `${destination} 11:00`, price: "$480" },
+      { airline: "International Airline", flightNumber: "IA012", departure: `${departureCity} 22:45`, arrival: `${destination} 01:15`, price: "$400" },
+      { airline: "Regional Airline", flightNumber: "RA345", departure: `${departureCity} 16:30`, arrival: `${destination} 19:00`, price: "$380" }
+    ],
     dailySchedule: [
       {
         day: "Day 1",
@@ -245,10 +230,10 @@ serve(async (req) => {
     const requestData = await req.json() as ItineraryRequest;
     console.log("Request data:", JSON.stringify(requestData));
     
-    if (!requestData.city && !requestData.destination) {
-      console.error("Error: Destination is required");
+    if (!requestData.destination || !requestData.departureCity) {
+      console.error("Error: Destination and departure city are required");
       return new Response(
-        JSON.stringify({ error: "Destination is required" }),
+        JSON.stringify({ error: "Destination and departure city are required" }),
         { 
           status: 400,
           headers: { 
@@ -259,39 +244,20 @@ serve(async (req) => {
       );
     }
 
-    // Use destination as city if provided
-    const city = requestData.destination || requestData.city;
-    
-    // Build the interests string from all available parameters
-    let interestsArray = [];
-    
-    if (requestData.interests) interestsArray.push(requestData.interests);
-    if (requestData.departureCity) interestsArray.push(`Departing from ${requestData.departureCity}`);
-    if (requestData.startDate && requestData.endDate) {
-      interestsArray.push(`From ${requestData.startDate} to ${requestData.endDate}`);
-    }
-    if (requestData.travelers) interestsArray.push(`For ${requestData.travelers} travelers`);
-    if (requestData.budget) interestsArray.push(`Budget around $${requestData.budget}`);
-    if (requestData.preferences) interestsArray.push(requestData.preferences);
-    
-    // If interests array is empty, use duration as fallback
-    if (interestsArray.length === 0 && requestData.interests) {
-      interestsArray.push(requestData.interests);
+    // Build the interests string from available parameters
+    let interests = requestData.interests || "";
+    if (requestData.duration) {
+      interests += interests ? `. Duration: ${requestData.duration}` : `Duration: ${requestData.duration}`;
     }
     
-    const interests = interestsArray.join(". ");
-    
-    console.log(`Generating itinerary for ${city} with details: ${interests}`);
+    console.log(`Generating itinerary from ${requestData.departureCity} to ${requestData.destination} with details: ${interests}`);
     
     // Generate detailed itinerary using our internal function
     const generatedItinerary = generateDetailedItinerary(
-      city, 
-      interests, 
-      requestData.startDate, 
-      requestData.endDate, 
+      requestData.destination, 
       requestData.departureCity, 
-      requestData.travelers,
-      requestData.budget
+      interests,
+      requestData.duration
     );
 
     // Return the response with the generated itinerary

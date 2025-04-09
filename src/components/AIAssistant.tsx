@@ -18,37 +18,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { generateItinerary } from "@/services/itineraryService";
 
-// Trip planning states
+// Trip planning states - simplified
 type PlanningState = 
   | "idle" 
   | "askingDestination" 
   | "askingDepartureCity"
-  | "askingStartDate"
-  | "askingEndDate"
-  | "askingTravelers"
-  | "askingBudget"
-  | "askingPreferences"
+  | "askingDuration"
+  | "askingInterests"
   | "generatingItinerary"
   | "displayingResults";
 
+// Simplified trip plan interface
 interface TripPlan {
   destination: string;
   departureCity: string;
-  startDate: string;
-  endDate: string;
-  travelers: number;
-  budget: number;
-  preferences: string;
+  duration: string;
+  interests: string;
 }
 
 const defaultTripPlan: TripPlan = {
   destination: "",
   departureCity: "",
-  startDate: "",
-  endDate: "",
-  travelers: 2,
-  budget: 0,
-  preferences: ""
+  duration: "5 days",
+  interests: ""
 };
 
 const AIAssistant = () => {
@@ -95,154 +87,50 @@ const AIAssistant = () => {
     
     if (planningState === "askingDepartureCity") {
       setTripPlan(prev => ({ ...prev, departureCity: userMessage }));
-      setPlanningState("askingStartDate");
+      setPlanningState("askingDuration");
       
       setTimeout(() => {
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: `Perfect. When will your trip start? (Please provide a date in YYYY-MM-DD format)`
+          content: `Perfect. How long do you plan to stay? (e.g., 3 days, 1 week)`
         }]);
         setLoading(false);
       }, 500);
       return;
     }
     
-    if (planningState === "askingStartDate") {
-      // Simple date validation
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      
-      if (!dateRegex.test(userMessage)) {
-        setTimeout(() => {
-          setConversation(prev => [...prev, {
-            role: 'assistant', 
-            content: `Please provide the start date in YYYY-MM-DD format (e.g., 2025-06-15).`
-          }]);
-          setLoading(false);
-        }, 500);
-        return;
-      }
-      
-      setTripPlan(prev => ({ ...prev, startDate: userMessage }));
-      setPlanningState("askingEndDate");
+    if (planningState === "askingDuration") {
+      setTripPlan(prev => ({ ...prev, duration: userMessage }));
+      setPlanningState("askingInterests");
       
       setTimeout(() => {
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: `When will your trip end? (Please provide a date in YYYY-MM-DD format)`
+          content: `Great! What are your interests or preferences for this trip? (e.g., museums, food, outdoor activities)`
         }]);
         setLoading(false);
       }, 500);
       return;
     }
     
-    if (planningState === "askingEndDate") {
-      // Simple date validation
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      
-      if (!dateRegex.test(userMessage)) {
-        setTimeout(() => {
-          setConversation(prev => [...prev, {
-            role: 'assistant', 
-            content: `Please provide the end date in YYYY-MM-DD format (e.g., 2025-06-20).`
-          }]);
-          setLoading(false);
-        }, 500);
-        return;
-      }
-      
-      setTripPlan(prev => ({ ...prev, endDate: userMessage }));
-      setPlanningState("askingTravelers");
-      
-      setTimeout(() => {
-        setConversation(prev => [...prev, {
-          role: 'assistant', 
-          content: `How many travelers will be on this trip?`
-        }]);
-        setLoading(false);
-      }, 500);
-      return;
-    }
-    
-    if (planningState === "askingTravelers") {
-      const travelers = parseInt(userMessage);
-      
-      if (isNaN(travelers) || travelers <= 0) {
-        setTimeout(() => {
-          setConversation(prev => [...prev, {
-            role: 'assistant', 
-            content: `Please provide a valid number of travelers.`
-          }]);
-          setLoading(false);
-        }, 500);
-        return;
-      }
-      
-      setTripPlan(prev => ({ ...prev, travelers: travelers }));
-      setPlanningState("askingBudget");
-      
-      setTimeout(() => {
-        setConversation(prev => [...prev, {
-          role: 'assistant', 
-          content: `What's your approximate budget for this trip (in USD)?`
-        }]);
-        setLoading(false);
-      }, 500);
-      return;
-    }
-    
-    if (planningState === "askingBudget") {
-      const budget = parseInt(userMessage.replace(/[^0-9]/g, ''));
-      
-      if (isNaN(budget)) {
-        setTimeout(() => {
-          setConversation(prev => [...prev, {
-            role: 'assistant', 
-            content: `Please provide a valid budget amount.`
-          }]);
-          setLoading(false);
-        }, 500);
-        return;
-      }
-      
-      setTripPlan(prev => ({ ...prev, budget: budget }));
-      setPlanningState("askingPreferences");
-      
-      setTimeout(() => {
-        setConversation(prev => [...prev, {
-          role: 'assistant', 
-          content: `Any specific preferences or interests for your trip? (e.g., outdoor activities, cultural attractions, food experiences, etc.)`
-        }]);
-        setLoading(false);
-      }, 500);
-      return;
-    }
-    
-    if (planningState === "askingPreferences") {
-      setTripPlan(prev => ({ ...prev, preferences: userMessage }));
+    if (planningState === "askingInterests") {
+      setTripPlan(prev => ({ ...prev, interests: userMessage }));
       setPlanningState("generatingItinerary");
       
       setConversation(prev => [...prev, {
         role: 'assistant', 
-        content: `Thank you for providing all the details! I'm now generating a custom itinerary for your trip to ${tripPlan.destination}. This will take a moment...`
+        content: `Thank you for providing all the details! I'm now generating a custom itinerary for your trip from ${tripPlan.departureCity} to ${tripPlan.destination} for ${tripPlan.duration}. This will take a moment...`
       }]);
       
       try {
-        // Calculate trip duration in days
-        const startDate = new Date(tripPlan.startDate);
-        const endDate = new Date(tripPlan.endDate);
-        const tripDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
-        
         console.log("Generating itinerary using HuggingFace API with data:", tripPlan);
         
         // Call the Hugging Face API via our service
         const generatedItinerary = await generateItinerary({
           destination: tripPlan.destination,
           departureCity: tripPlan.departureCity,
-          startDate: tripPlan.startDate,
-          endDate: tripPlan.endDate,
-          travelers: tripPlan.travelers,
-          budget: tripPlan.budget,
-          preferences: tripPlan.preferences
+          duration: tripPlan.duration,
+          interests: tripPlan.interests
         });
         
         console.log("Generated itinerary:", generatedItinerary);
@@ -351,10 +239,10 @@ const AIAssistant = () => {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!tripPlan.destination) {
+    if (!tripPlan.destination || !tripPlan.departureCity) {
       toast({
         title: "Missing information",
-        description: "Please provide a destination",
+        description: "Please provide both destination and departure city",
         variant: "destructive"
       });
       return;
@@ -368,7 +256,7 @@ const AIAssistant = () => {
       ...prev, 
       {
         role: 'user', 
-        content: `I want to plan a trip to ${tripPlan.destination} from ${tripPlan.departureCity}.`
+        content: `I want to plan a trip from ${tripPlan.departureCity} to ${tripPlan.destination} for ${tripPlan.duration}.`
       },
       {
         role: 'assistant', 
@@ -377,22 +265,14 @@ const AIAssistant = () => {
     ]);
     
     try {
-      // Calculate trip duration in days
-      const startDate = new Date(tripPlan.startDate);
-      const endDate = new Date(tripPlan.endDate);
-      const tripDuration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)));
-      
       console.log("Generating itinerary using HuggingFace API with form data:", tripPlan);
       
       // Call our service to generate the itinerary
       const generatedItinerary = await generateItinerary({
         destination: tripPlan.destination,
         departureCity: tripPlan.departureCity,
-        startDate: tripPlan.startDate,
-        endDate: tripPlan.endDate,
-        travelers: tripPlan.travelers,
-        budget: tripPlan.budget,
-        preferences: tripPlan.preferences
+        duration: tripPlan.duration,
+        interests: tripPlan.interests
       });
       
       console.log("Generated itinerary:", generatedItinerary);
@@ -491,11 +371,8 @@ const AIAssistant = () => {
                 placeholder={
                   planningState === "askingDestination" ? "Enter destination..." : 
                   planningState === "askingDepartureCity" ? "Enter departure city..." :
-                  planningState === "askingStartDate" ? "Enter start date (YYYY-MM-DD)..." :
-                  planningState === "askingEndDate" ? "Enter end date (YYYY-MM-DD)..." :
-                  planningState === "askingTravelers" ? "Enter number of travelers..." :
-                  planningState === "askingBudget" ? "Enter your budget..." :
-                  planningState === "askingPreferences" ? "Enter your preferences..." :
+                  planningState === "askingDuration" ? "Enter duration (e.g., 3 days, 1 week)..." :
+                  planningState === "askingInterests" ? "Enter your interests..." :
                   "Ask me about your trip..."
                 }
                 className="flex-1"
@@ -599,80 +476,38 @@ const AIAssistant = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="departureCity">
-                  Departure City
+                  Departure City <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="departureCity"
                   placeholder="Where are you departing from?"
                   value={tripPlan.departureCity}
                   onChange={(e) => setTripPlan(prev => ({ ...prev, departureCity: e.target.value }))}
+                  required
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">
-                    Start Date
-                  </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={tripPlan.startDate}
-                    onChange={(e) => setTripPlan(prev => ({ ...prev, startDate: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">
-                    End Date
-                  </Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={tripPlan.endDate}
-                    onChange={(e) => setTripPlan(prev => ({ ...prev, endDate: e.target.value }))}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="travelers">
-                    Travelers
-                  </Label>
-                  <Input
-                    id="travelers"
-                    type="number"
-                    min="1"
-                    value={tripPlan.travelers}
-                    onChange={(e) => setTripPlan(prev => ({ ...prev, travelers: parseInt(e.target.value) || 1 }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="budget">
-                    Budget (USD)
-                  </Label>
-                  <Input
-                    id="budget"
-                    type="number"
-                    min="0"
-                    placeholder="Optional"
-                    value={tripPlan.budget || ""}
-                    onChange={(e) => setTripPlan(prev => ({ ...prev, budget: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">
+                  Duration
+                </Label>
+                <Input
+                  id="duration"
+                  placeholder="5 days, 1 week, etc."
+                  value={tripPlan.duration}
+                  onChange={(e) => setTripPlan(prev => ({ ...prev, duration: e.target.value }))}
+                />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="preferences">
-                  Trip Preferences
+                <Label htmlFor="interests">
+                  Interests
                 </Label>
                 <Textarea
-                  id="preferences"
-                  placeholder="Activities, attractions, dining preferences, etc."
-                  value={tripPlan.preferences}
-                  onChange={(e) => setTripPlan(prev => ({ ...prev, preferences: e.target.value }))}
+                  id="interests"
+                  placeholder="Museums, food, outdoor activities, etc."
+                  value={tripPlan.interests}
+                  onChange={(e) => setTripPlan(prev => ({ ...prev, interests: e.target.value }))}
                   className="min-h-[80px]"
                 />
               </div>

@@ -1,14 +1,10 @@
-
 // Itinerary generation service using the Hugging Face API
 
 interface ItineraryRequest {
   destination: string;
-  departureCity?: string;
-  startDate?: string;
-  endDate?: string;
-  travelers?: number;
-  budget?: number;
-  preferences?: string;
+  departureCity: string;
+  interests?: string;
+  duration?: string;
 }
 
 interface HuggingFaceResponse {
@@ -58,12 +54,10 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
   try {
     console.log("Generating itinerary for:", request);
     
-    // Format the input for the Hugging Face API
-    const prompt = `Generate a comprehensive travel itinerary for ${request.travelers || 2} travelers to ${request.destination}` + 
-      (request.departureCity ? ` from ${request.departureCity}` : '') +
-      (request.startDate && request.endDate ? ` from ${request.startDate} to ${request.endDate}` : '') +
-      (request.budget ? ` with a budget of $${request.budget}` : '') +
-      (request.preferences ? `. Preferences: ${request.preferences}` : '') +
+    // Format the input for the Hugging Face API - simplified to use only the required parameters
+    const prompt = `Generate a comprehensive travel itinerary from ${request.departureCity} to ${request.destination}` + 
+      (request.duration ? ` for ${request.duration}` : ' for 5 days') +
+      (request.interests ? `. Interests: ${request.interests}` : '') +
       `. Include flight options, recommended hotels, daily schedule with activities, and travel tips.`;
     
     // Call the Hugging Face API
@@ -88,7 +82,6 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     const rawItinerary = data.result;
     
     // Process the raw text into structured data
-    // This is a simplified version - you might need to adjust based on actual response format
     const processedItinerary = processRawItinerary(rawItinerary, request);
     
     return processedItinerary;
@@ -104,12 +97,8 @@ const processRawItinerary = (rawText: string, request: ItineraryRequest): Genera
   // Default structure
   const itinerary: GeneratedItinerary = {
     destination: request.destination,
-    duration: request.startDate && request.endDate ? 
-      `${new Date(request.endDate).getDate() - new Date(request.startDate).getDate()} days` : 
-      "7 days",
-    dates: request.startDate && request.endDate ? 
-      `${request.startDate} to ${request.endDate}` : 
-      "Flexible dates",
+    duration: request.duration || "5 days",
+    dates: "Flexible dates",
     flights: [],
     hotels: [],
     dailySchedule: [],
