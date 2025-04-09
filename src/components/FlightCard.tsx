@@ -27,17 +27,17 @@ interface FlightCardProps {
 
 const FlightCard = ({ flight }: FlightCardProps) => {
   // Format dates
-  const departureTime = new Date(flight.departureTime || flight.departureDate).toLocaleTimeString([], {
+  const departureTime = new Date(flight.departureTime || flight.departureDate || "").toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
   
-  const arrivalTime = new Date(flight.arrivalTime || flight.arrivalDate).toLocaleTimeString([], {
+  const arrivalTime = new Date(flight.arrivalTime || flight.arrivalDate || "").toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
   
-  const departureDate = new Date(flight.departureTime || flight.departureDate).toLocaleDateString([], {
+  const departureDate = new Date(flight.departureTime || flight.departureDate || "").toLocaleDateString([], {
     month: 'short',
     day: 'numeric',
   });
@@ -46,8 +46,14 @@ const FlightCard = ({ flight }: FlightCardProps) => {
   const getDuration = () => {
     if (flight.duration) return flight.duration;
     
-    const depTime = new Date(flight.departureTime || flight.departureDate);
-    const arrTime = new Date(flight.arrivalTime || flight.arrivalDate);
+    const depTime = new Date(flight.departureTime || flight.departureDate || "");
+    const arrTime = new Date(flight.arrivalTime || flight.arrivalDate || "");
+    
+    // Check if dates are valid before calculating
+    if (isNaN(depTime.getTime()) || isNaN(arrTime.getTime())) {
+      return "N/A";
+    }
+    
     const durationMs = arrTime.getTime() - depTime.getTime();
     
     const hours = Math.floor(durationMs / (1000 * 60 * 60));
@@ -57,8 +63,8 @@ const FlightCard = ({ flight }: FlightCardProps) => {
   };
   
   // Use departure/arrival or from/to fields
-  const fromLocation = flight.departure || flight.from;
-  const toLocation = flight.arrival || flight.to;
+  const fromLocation = flight.departure || flight.from || "";
+  const toLocation = flight.arrival || flight.to || "";
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">

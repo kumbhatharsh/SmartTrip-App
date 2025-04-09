@@ -17,6 +17,19 @@ import { useNavigate } from "react-router-dom";
 const Index = () => {
   const navigate = useNavigate();
 
+  // Map popularFlights to the format expected by FlightCard
+  const formattedFlights = popularFlights.map(flight => ({
+    id: flight.id,
+    airline: flight.airline,
+    flightNumber: flight.id, // Using id as flightNumber since it's not available
+    departure: flight.from,
+    arrival: flight.to,
+    departureTime: flight.departureDate,
+    arrivalTime: flight.arrivalDate,
+    price: flight.price,
+    duration: flight.duration
+  }));
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -85,7 +98,7 @@ const Index = () => {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {popularFlights.map((flight) => (
+              {formattedFlights.map((flight) => (
                 <FlightCard key={flight.id} flight={flight} />
               ))}
             </div>

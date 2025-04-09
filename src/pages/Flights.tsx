@@ -99,9 +99,17 @@ const Flights = () => {
 
   // Helper function to calculate flight duration
   const calculateDuration = (departure, arrival) => {
+    if (!departure || !arrival) return "N/A";
+    
     const departureTime = new Date(departure);
     const arrivalTime = new Date(arrival);
-    const durationMs = arrivalTime - departureTime;
+    
+    // Check if dates are valid
+    if (isNaN(departureTime.getTime()) || isNaN(arrivalTime.getTime())) {
+      return "N/A";
+    }
+    
+    const durationMs = arrivalTime.getTime() - departureTime.getTime();
     
     const hours = Math.floor(durationMs / (1000 * 60 * 60));
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
