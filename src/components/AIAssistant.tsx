@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, MapPin, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { 
   Dialog,
@@ -18,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { generateItinerary } from "@/services/itineraryService";
 
 // Trip planning states
 type PlanningState = 
@@ -233,80 +232,36 @@ const AIAssistant = () => {
         const endDate = new Date(tripPlan.endDate);
         const tripDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
         
-        console.log("Calling generate-itinerary function with data:", tripPlan);
+        console.log("Generating itinerary using HuggingFace API with data:", tripPlan);
         
-        // Call the edge function to generate the itinerary
-        const response = await fetch("https://roqopwfyuujaqcviejok.supabase.co/functions/v1/generate-itinerary", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabase.auth.getSession()}`
-          },
-          body: JSON.stringify({
-            destination: tripPlan.destination,
-            departureCity: tripPlan.departureCity,
-            startDate: tripPlan.startDate,
-            endDate: tripPlan.endDate,
-            travelers: tripPlan.travelers,
-            budget: tripPlan.budget,
-            preferences: tripPlan.preferences,
-            interests: `${tripDuration} days trip from ${tripPlan.startDate} to ${tripPlan.endDate} for ${tripPlan.travelers} travelers with budget $${tripPlan.budget}. Preferences: ${tripPlan.preferences}`
-          }),
+        // Call the Hugging Face API via our service
+        const generatedItinerary = await generateItinerary({
+          destination: tripPlan.destination,
+          departureCity: tripPlan.departureCity,
+          startDate: tripPlan.startDate,
+          endDate: tripPlan.endDate,
+          travelers: tripPlan.travelers,
+          budget: tripPlan.budget,
+          preferences: tripPlan.preferences
         });
         
-        if (!response.ok) {
-          throw new Error(`Failed to generate itinerary: ${response.statusText}`);
-        }
+        console.log("Generated itinerary:", generatedItinerary);
         
-        const data = await response.json();
-        console.log("API response:", data);
+        setPlanningState("displayingResults");
+        setConversation(prev => [...prev, {
+          role: 'assistant', 
+          content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
+        }]);
         
-        // Check if the API returned an itinerary
-        if (data.success && data.itinerary) {
-          setPlanningState("displayingResults");
-          setConversation(prev => [...prev, {
-            role: 'assistant', 
-            content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
-          }]);
-          
-          // Navigate to itinerary details with the data
-          navigate("/itinerary-details", { 
-            state: { itinerary: data.itinerary }
-          });
-          
-          toast({
-            title: "Success!",
-            description: "Your custom itinerary has been generated",
-          });
-          
-          // Save the trip details
-          try {
-            // Try to find existing itineraries
-            const { data: itineraries, error } = await supabase
-              .from('Itinerary')
-              .select('*')
-              .ilike('destination', `%${tripPlan.destination}%`)
-              .order('price', { ascending: true });
-            
-            if (error) throw error;
-            
-            if (itineraries && itineraries.length > 0) {
-              // Save itineraries to sessionStorage for the itineraries page
-              sessionStorage.setItem('searchedItineraries', JSON.stringify(itineraries));
-              sessionStorage.setItem('searchDestination', tripPlan.destination);
-              sessionStorage.setItem('searchDuration', tripDuration.toString());
-              
-              setConversation(prev => [...prev, {
-                role: 'assistant', 
-                content: `I've also found ${itineraries.length} pre-made itineraries for ${tripPlan.destination}. Would you like to see them?`
-              }]);
-            }
-          } catch (error) {
-            console.error("Error finding itineraries:", error);
-          }
-        } else {
-          throw new Error("No itinerary data in the response");
-        }
+        // Navigate to itinerary details with the data
+        navigate("/itinerary-details", { 
+          state: { itinerary: generatedItinerary }
+        });
+        
+        toast({
+          title: "Success!",
+          description: "Your custom itinerary has been generated",
+        });
       } catch (error) {
         console.error("Error generating itinerary:", error);
         setPlanningState("idle");
@@ -427,52 +382,35 @@ const AIAssistant = () => {
       const endDate = new Date(tripPlan.endDate);
       const tripDuration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)));
       
-      console.log("Calling generate-itinerary function with form data:", tripPlan);
+      console.log("Generating itinerary using HuggingFace API with form data:", tripPlan);
       
-      // Call the edge function to generate the itinerary
-      const response = await fetch("https://roqopwfyuujaqcviejok.supabase.co/functions/v1/generate-itinerary", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabase.auth.getSession()}`
-        },
-        body: JSON.stringify({
-          destination: tripPlan.destination,
-          departureCity: tripPlan.departureCity,
-          startDate: tripPlan.startDate,
-          endDate: tripPlan.endDate,
-          travelers: tripPlan.travelers,
-          budget: tripPlan.budget,
-          preferences: tripPlan.preferences,
-          interests: `${tripDuration} days trip from ${tripPlan.startDate || "flexible date"} to ${tripPlan.endDate || "flexible date"} for ${tripPlan.travelers} travelers with budget $${tripPlan.budget || "flexible"}. Preferences: ${tripPlan.preferences}`
-        }),
+      // Call our service to generate the itinerary
+      const generatedItinerary = await generateItinerary({
+        destination: tripPlan.destination,
+        departureCity: tripPlan.departureCity,
+        startDate: tripPlan.startDate,
+        endDate: tripPlan.endDate,
+        travelers: tripPlan.travelers,
+        budget: tripPlan.budget,
+        preferences: tripPlan.preferences
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to generate itinerary: ${response.statusText}`);
-      }
+      console.log("Generated itinerary:", generatedItinerary);
       
-      const data = await response.json();
-      console.log("Form API response:", data);
+      setConversation(prev => [...prev, {
+        role: 'assistant', 
+        content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
+      }]);
       
       // Navigate to itinerary details with data
-      if (data.success && data.itinerary) {
-        setConversation(prev => [...prev, {
-          role: 'assistant', 
-          content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
-        }]);
-        
-        navigate("/itinerary-details", { 
-          state: { itinerary: data.itinerary }
-        });
-        
-        toast({
-          title: "Success",
-          description: "Your custom itinerary has been generated",
-        });
-      } else {
-        throw new Error("No itinerary data in the response");
-      }
+      navigate("/itinerary-details", { 
+        state: { itinerary: generatedItinerary }
+      });
+      
+      toast({
+        title: "Success",
+        description: "Your custom itinerary has been generated",
+      });
     } catch (error) {
       console.error("Error generating itinerary:", error);
       setConversation(prev => [...prev, {

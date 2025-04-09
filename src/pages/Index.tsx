@@ -34,7 +34,44 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        <HeroSection />
+        {/* Updated HeroSection without search */}
+        <div className="relative">
+          {/* Background image with overlay */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center z-0" 
+            style={{ 
+              backgroundImage: "url('https://images.unsplash.com/photo-1488085061387-422e29b40080?auto=format&fit=crop&w=1920&h=1080')",
+              filter: "brightness(0.65)"
+            }}
+          />
+          
+          <div className="relative z-10 px-4 py-16 md:py-28 container mx-auto text-white">
+            <div className="max-w-4xl mx-auto text-center mb-10">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+                Discover Your Perfect <span className="text-sunset-400">Journey</span>
+              </h1>
+              <p className="text-xl md:text-2xl mb-8">
+                Book hotels, flights, and AI-powered itineraries for your dream vacation
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button 
+                  size="lg" 
+                  className="bg-sunset-500 hover:bg-sunset-600"
+                  onClick={() => navigate("/flights")}
+                >
+                  <Plane className="mr-2 h-5 w-5" /> Browse Flights
+                </Button>
+                <Button 
+                  size="lg" 
+                  className="bg-ocean-600 hover:bg-ocean-700"
+                  onClick={() => navigate("/hotels")}
+                >
+                  <Hotel className="mr-2 h-5 w-5" /> Explore Hotels
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Popular Destinations */}
         <section className="py-16 px-4">
@@ -129,7 +166,7 @@ const Index = () => {
                 className="bg-white text-teal-700 hover:bg-white/90 px-8"
                 onClick={() => navigate("/itineraries")}
               >
-                Create Custom Itinerary
+                View All Itineraries
               </Button>
             </div>
           </div>

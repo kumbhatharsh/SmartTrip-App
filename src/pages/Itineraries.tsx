@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { popularItineraries } from "@/lib/mockData";
-import { Search, Calendar, MapPin, DollarSign, UsersRound, ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { Search, Calendar, MapPin, DollarSign, UsersRound, ArrowLeft, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -52,8 +51,6 @@ const Itineraries = () => {
   const [destinationInput, setDestinationInput] = useState("");
   const [durationInput, setDurationInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generatingItinerary, setGeneratingItinerary] = useState(false);
-  const [detailedItinerary, setDetailedItinerary] = useState<DetailedItinerary | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -102,66 +99,6 @@ const Itineraries = () => {
     } catch (error) {
       console.error("Error searching itineraries:", error);
       setLoading(false);
-    }
-  };
-
-  // Generate AI itinerary
-  const generateAIItinerary = async (destination: string, duration: string) => {
-    if (!destination) {
-      toast({
-        title: "Missing information",
-        description: "Please provide a destination",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setGeneratingItinerary(true);
-    
-    try {
-      const response = await fetch("https://roqopwfyuujaqcviejok.supabase.co/functions/v1/generate-itinerary", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabase.auth.getSession()}`
-        },
-        body: JSON.stringify({
-          city: destination,
-          interests: `${duration} days trip`,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to generate itinerary");
-      }
-      
-      const data = await response.json();
-      console.log("AI generation response:", data);
-      
-      // Navigate to itinerary details with data
-      if (data.success && data.itinerary) {
-        setDetailedItinerary(data.itinerary);
-        
-        navigate("/itinerary-details", { 
-          state: { itinerary: data.itinerary }
-        });
-        
-        toast({
-          title: "Success",
-          description: "Your custom itinerary has been generated",
-        });
-      } else {
-        throw new Error("No itinerary data in the response");
-      }
-    } catch (error) {
-      console.error("Error generating itinerary:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate your custom itinerary. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setGeneratingItinerary(false);
     }
   };
 
@@ -231,17 +168,6 @@ const Itineraries = () => {
                   {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
                   Find Itineraries
                 </Button>
-                <Button 
-                  className="bg-ocean-500 hover:bg-ocean-600 px-8"
-                  onClick={() => generateAIItinerary(destinationInput, durationInput)}
-                  disabled={generatingItinerary}
-                >
-                  {generatingItinerary ? 
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 
-                    <FileText className="h-4 w-4 mr-2" />
-                  }
-                  {generatingItinerary ? "Generating..." : "Create AI Itinerary"}
-                </Button>
               </div>
             </div>
           </div>
@@ -273,19 +199,6 @@ const Itineraries = () => {
                     <Calendar className="h-3 w-3 mr-1" /> {searchDuration} days
                   </Badge>
                 )}
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="bg-white"
-                  onClick={() => generateAIItinerary(searchDestination, searchDuration)}
-                  disabled={generatingItinerary}
-                >
-                  {generatingItinerary ? 
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : 
-                    <FileText className="h-3 w-3 mr-1" />
-                  }
-                  {generatingItinerary ? "Generating..." : "Create AI Itinerary"}
-                </Button>
               </div>
             </div>
             
@@ -309,7 +222,7 @@ const Itineraries = () => {
             ) : (
               <Alert className="mb-6">
                 <AlertDescription>
-                  No itineraries found for your search criteria. Try different location or parameters, or use our AI to create a custom itinerary.
+                  No itineraries found for your search criteria. Try different location or parameters.
                 </AlertDescription>
               </Alert>
             )}
