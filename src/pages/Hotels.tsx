@@ -36,7 +36,6 @@ const Hotels = () => {
   useEffect(() => {
     const fetchHotels = async () => {
       try {
-        // Using the correct table name "Hotel" instead of "hotels"
         const { data, error } = await supabase
           .from("Hotel")
           .select("*")

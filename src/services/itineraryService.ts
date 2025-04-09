@@ -1,14 +1,12 @@
+
 // Itinerary generation service using the Hugging Face API
+import { Client } from "@gradio/client";
 
 interface ItineraryRequest {
   destination: string;
   departureCity: string;
   interests?: string;
   duration?: string;
-}
-
-interface HuggingFaceResponse {
-  result: string;
 }
 
 export interface GeneratedItinerary {
@@ -54,35 +52,24 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
   try {
     console.log("Generating itinerary for:", request);
     
-    // Format the input for the Hugging Face API - simplified to use only the required parameters
-    const prompt = `Generate a comprehensive travel itinerary from ${request.departureCity} to ${request.destination}` + 
-      (request.duration ? ` for ${request.duration}` : ' for 5 days') +
-      (request.interests ? `. Interests: ${request.interests}` : '') +
-      `. Include flight options, recommended hotels, daily schedule with activities, and travel tips.`;
+    // Convert duration to number if it's a string with just numbers
+    const durationValue = request.duration ? parseInt(request.duration) : 5;
     
-    // Call the Hugging Face API
-    const response = await fetch("https://huggingface.co/spaces/piyushkumarp1/itinerary/api/run/predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        data: [prompt]
-      }),
+    // Connect to the Hugging Face Space using Gradio client
+    const client = await Client.connect("piyushkumarp1/itinerary");
+    
+    // Call the predict endpoint with the required parameters
+    const result = await client.predict("/predict", { 
+      source_city: request.departureCity,
+      destination_city: request.destination,
+      interests: request.interests || "General tourism",
+      duration: isNaN(durationValue) ? 5 : durationValue,
     });
     
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-    
-    const data = await response.json() as HuggingFaceResponse;
-    console.log("API response:", data);
-    
-    // Parse the API response
-    const rawItinerary = data.result;
+    console.log("API response:", result.data);
     
     // Process the raw text into structured data
-    const processedItinerary = processRawItinerary(rawItinerary, request);
+    const processedItinerary = processRawItinerary(result.data, request);
     
     return processedItinerary;
   } catch (error) {
