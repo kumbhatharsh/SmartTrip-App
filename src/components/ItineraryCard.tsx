@@ -1,3 +1,4 @@
+
 import { Itinerary } from "@/lib/mockData";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { MapPin, Calendar, CheckCircle, CalendarDays } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ItineraryCardProps {
   itinerary: Itinerary;
@@ -29,12 +31,34 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
   const startDateFormatted = formatDate(itinerary.startDate);
   const endDateFormatted = formatDate(itinerary.endDate);
 
-  // Generate a sample detailed itinerary for the card
-  const handleViewItinerary = () => {
+  // Fetch data from database to create a detailed itinerary view
+  const handleViewItinerary = async () => {
     try {
       console.log("View itinerary clicked for:", itinerary.title);
+      toast({
+        title: "Loading Itinerary",
+        description: `Preparing details for ${itinerary.destination}`,
+      });
       
-      // Create a detailed itinerary from the card data
+      // Fetch hotels in the destination
+      const { data: hotels, error: hotelsError } = await supabase
+        .from('Hotel')
+        .select('*')
+        .ilike('location', `%${itinerary.destination}%`)
+        .limit(3);
+        
+      if (hotelsError) throw hotelsError;
+      
+      // Fetch flights to the destination
+      const { data: flights, error: flightsError } = await supabase
+        .from('Flight')
+        .select('*')
+        .ilike('arrival', `%${itinerary.destination}%`)
+        .limit(3);
+        
+      if (flightsError) throw flightsError;
+      
+      // Create a detailed itinerary from real database data
       const detailedItinerary = {
         destination: itinerary.destination,
         duration: itinerary.duration,
@@ -56,42 +80,19 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
             recommendedTime: "1 hour" 
           },
         ],
-        hotels: [
-          { 
-            name: "Luxury Hotel", 
-            address: "123 Main Street", 
-            price: "$300/night", 
-            rating: 5 
-          },
-          { 
-            name: "Boutique Stay", 
-            address: "456 Central Avenue", 
-            price: "$180/night", 
-            rating: 4 
-          },
-          { 
-            name: "Budget Friendly Inn", 
-            address: "789 Side Road", 
-            price: "$90/night", 
-            rating: 3 
-          },
-        ],
-        flights: [
-          { 
-            airline: "Major Airline", 
-            flightNumber: "MA123", 
-            departure: "Your City 10:00", 
-            arrival: `${itinerary.destination} 12:30`, 
-            price: "$450" 
-          },
-          { 
-            airline: "Budget Carrier", 
-            flightNumber: "BC456", 
-            departure: "Your City 14:15", 
-            arrival: `${itinerary.destination} 16:45`, 
-            price: "$320" 
-          },
-        ],
+        hotels: hotels.map(hotel => ({
+          name: hotel.name,
+          address: hotel.location,
+          price: `$${hotel.price}/night`,
+          rating: hotel.rating
+        })) || [],
+        flights: flights.map(flight => ({
+          airline: flight.airline,
+          flightNumber: flight.flightNumber,
+          departure: `${flight.departure} ${new Date(flight.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
+          arrival: `${flight.arrival} ${new Date(flight.arrivalTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
+          price: `$${flight.price}`
+        })) || [],
         dailySchedule: [
           {
             day: "Day 1",
@@ -138,22 +139,16 @@ const ItineraryCard = ({ itinerary }: ItineraryCardProps) => {
         ]
       };
 
-      console.log("Navigating to itinerary details with data:", detailedItinerary);
+      console.log("Navigating to itinerary details with real data:", detailedItinerary);
       
-      // Show toast notification
-      toast({
-        title: "Loading Itinerary",
-        description: `Preparing details for ${itinerary.destination}`,
-      });
-      
-      // Navigate to the itinerary details page with the sample data
+      // Navigate to the itinerary details page with the fetched data
       navigate("/itinerary-details", { 
         state: { 
           itinerary: detailedItinerary
         } 
       });
     } catch (error) {
-      console.error("Error navigating to itinerary details:", error);
+      console.error("Error fetching itinerary details:", error);
       toast({
         title: "Error",
         description: "Failed to load itinerary details. Please try again.",

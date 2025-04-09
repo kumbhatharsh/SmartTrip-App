@@ -1,20 +1,35 @@
 
-import { Hotel } from "@/lib/mockData";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin } from "lucide-react";
 
+interface HotelProps {
+  id: string;
+  name: string;
+  location: string;
+  description: string;
+  price: number;
+  rating: number;
+  image?: string;
+  amenities?: string[];
+  availableRooms?: number;
+}
+
 interface HotelCardProps {
-  hotel: Hotel;
+  hotel: HotelProps;
 }
 
 const HotelCard = ({ hotel }: HotelCardProps) => {
+  // Generate a random image if none is provided
+  const hotelImage = hotel.image || 
+    `https://source.unsplash.com/random/800x600/?hotel,${hotel.name.toLowerCase().replace(/\s+/g, ',')}`;
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 overflow-hidden relative">
         <img 
-          src={hotel.image} 
+          src={hotelImage} 
           alt={hotel.name}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         />
@@ -35,6 +50,21 @@ const HotelCard = ({ hotel }: HotelCardProps) => {
           <span>{hotel.location}</span>
         </div>
         <p className="text-gray-600 text-sm line-clamp-2">{hotel.description}</p>
+        
+        {hotel.amenities && hotel.amenities.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1">
+            {hotel.amenities.slice(0, 3).map((amenity, index) => (
+              <Badge key={index} variant="outline" className="text-xs bg-gray-50">
+                {amenity}
+              </Badge>
+            ))}
+            {hotel.amenities.length > 3 && (
+              <Badge variant="outline" className="text-xs bg-gray-50">
+                +{hotel.amenities.length - 3} more
+              </Badge>
+            )}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="pt-0">
         <Button className="w-full bg-ocean-600 hover:bg-ocean-700">
