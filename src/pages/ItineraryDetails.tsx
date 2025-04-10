@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -5,10 +6,15 @@ import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, Plane, Hotel, Utensils, Info, ExternalLink } from "lucide-react";
+import { 
+  Calendar, Clock, MapPin, Plane, Hotel, Utensils, Info, 
+  ExternalLink, CloudSun, CalendarRange, CloudRain
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import LocalEvents from "@/components/LocalEvents";
+import WeatherAlerts from "@/components/WeatherAlerts";
 
 interface Attraction {
   name: string;
@@ -49,6 +55,19 @@ interface Restaurant {
   address: string;
 }
 
+interface Weather {
+  forecast: string;
+  temperature: string;
+  conditions: string;
+}
+
+interface LocalEvent {
+  name: string;
+  date: string;
+  description: string;
+  location: string;
+}
+
 interface DetailedItinerary {
   destination: string;
   duration: string;
@@ -59,6 +78,8 @@ interface DetailedItinerary {
   dailySchedule: DaySchedule[];
   restaurants: Restaurant[];
   tips: string[];
+  weather?: Weather[];
+  localEvents?: LocalEvent[];
 }
 
 const parisItinerary: DetailedItinerary = {
@@ -153,6 +174,19 @@ const parisItinerary: DetailedItinerary = {
     "Learn a few basic French phrases - locals appreciate the effort",
     "Be aware of pickpockets in tourist areas and on public transport",
     "Make dinner reservations in advance, especially for high-end restaurants"
+  ],
+  weather: [
+    { forecast: "Day 1", temperature: "22°C/72°F", conditions: "Sunny with some clouds" },
+    { forecast: "Day 2", temperature: "24°C/75°F", conditions: "Sunny" },
+    { forecast: "Day 3", temperature: "20°C/68°F", conditions: "Light rain in the morning" },
+    { forecast: "Day 4", temperature: "21°C/70°F", conditions: "Partly cloudy" },
+    { forecast: "Day 5", temperature: "23°C/73°F", conditions: "Sunny" }
+  ],
+  localEvents: [
+    { name: "Night at the Louvre", date: "Every Friday", description: "Extended evening hours with special exhibitions", location: "Louvre Museum" },
+    { name: "Street Music Festival", date: "June 21", description: "Annual celebration of music throughout the city", location: "Various locations" },
+    { name: "Bastille Day Celebrations", date: "July 14", description: "National holiday with fireworks and parades", location: "Eiffel Tower and Champs-Élysées" },
+    { name: "Summer Open-Air Cinema", date: "July-August", description: "Free outdoor movie screenings", location: "Parc de la Villette" }
   ]
 };
 
@@ -288,6 +322,66 @@ const ItineraryDetails = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Weather Information */}
+            {itinerary.weather && itinerary.weather.length > 0 && (
+              <Card className="bg-white shadow-md">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-bold mb-4 flex items-center">
+                    <CloudSun className="h-5 w-5 mr-2 text-teal-600" />
+                    Weather Forecast
+                  </h2>
+                  <div className="space-y-3">
+                    {itinerary.weather.map((day, index) => (
+                      <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
+                        <div>
+                          <p className="font-medium">{day.forecast}</p>
+                          <p className="text-sm text-gray-600">{day.conditions}</p>
+                        </div>
+                        <div className="text-right font-medium text-ocean-600">
+                          {day.temperature}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Local Events */}
+            {itinerary.localEvents && itinerary.localEvents.length > 0 ? (
+              <Card className="bg-white shadow-md">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-bold mb-4 flex items-center">
+                    <CalendarRange className="h-5 w-5 mr-2 text-teal-600" />
+                    Local Events
+                  </h2>
+                  <div className="space-y-3">
+                    {itinerary.localEvents.map((event, index) => (
+                      <div key={index} className="py-2 border-b last:border-0">
+                        <h3 className="font-bold text-base">{event.name}</h3>
+                        <div className="flex items-center text-sm text-gray-500 mb-1">
+                          <Calendar className="h-3.5 w-3.5 mr-1" />
+                          <span>{event.date}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500 mb-2">
+                          <MapPin className="h-3.5 w-3.5 mr-1" />
+                          <span>{event.location}</span>
+                        </div>
+                        <p className="text-sm text-gray-600">{event.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <LocalEvents />
+            )}
+            
+            {/* Weather Alerts */}
+            <WeatherAlerts />
+          </div>
+
           <Tabs defaultValue="schedule" className="w-full max-w-4xl mx-auto">
             <TabsList className="grid grid-cols-5 mb-8">
               <TabsTrigger value="schedule">Schedule</TabsTrigger>

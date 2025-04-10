@@ -1,9 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, MapPin, FileText, Loader2 } from "lucide-react";
+import { 
+  Settings, Send, CloudSun, BellRing, ArrowRight, X, Calendar, 
+  MapPin, FileText, Loader2, DollarSign, Sparkles
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -17,6 +21,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { generateItinerary } from "@/services/itineraryService";
+import { format } from "date-fns";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 
 // Trip planning states - simplified
 type PlanningState = 
@@ -24,6 +32,8 @@ type PlanningState =
   | "askingDestination" 
   | "askingDepartureCity"
   | "askingDuration"
+  | "askingJourneyDate"
+  | "askingBudget"
   | "askingInterests"
   | "generatingItinerary"
   | "displayingResults";
@@ -33,14 +43,20 @@ interface TripPlan {
   destination: string;
   departureCity: string;
   duration: string;
+  journeyDate: string;
   interests: string;
+  isPersonalized: boolean;
+  budget: number;
 }
 
 const defaultTripPlan: TripPlan = {
   destination: "",
   departureCity: "",
   duration: "5 days",
-  interests: ""
+  journeyDate: "",
+  interests: "",
+  isPersonalized: true,
+  budget: 3
 };
 
 const AIAssistant = () => {
@@ -52,12 +68,14 @@ const AIAssistant = () => {
   const [tripPlan, setTripPlan] = useState<TripPlan>(defaultTripPlan);
   const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [showDetailedForm, setShowDetailedForm] = useState(false);
+  const [journeyDate, setJourneyDate] = useState<Date>();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const resetTripPlanningState = () => {
     setPlanningState("idle");
     setTripPlan(defaultTripPlan);
+    setJourneyDate(undefined);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -101,6 +119,44 @@ const AIAssistant = () => {
     
     if (planningState === "askingDuration") {
       setTripPlan(prev => ({ ...prev, duration: userMessage }));
+      setPlanningState("askingJourneyDate");
+      
+      setTimeout(() => {
+        setConversation(prev => [...prev, {
+          role: 'assistant', 
+          content: `Great! When are you planning to travel? (e.g., June 2025, Next month, etc.)`
+        }]);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+    
+    if (planningState === "askingJourneyDate") {
+      setTripPlan(prev => ({ ...prev, journeyDate: userMessage }));
+      setPlanningState("askingBudget");
+      
+      setTimeout(() => {
+        setConversation(prev => [...prev, {
+          role: 'assistant', 
+          content: `What's your budget for this trip? (1 = Budget, 3 = Moderate, 5 = Luxury)`
+        }]);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+    
+    if (planningState === "askingBudget") {
+      // Try to parse budget
+      let budgetValue = 3;
+      if (userMessage.includes("1") || userMessage.toLowerCase().includes("budget")) {
+        budgetValue = 1;
+      } else if (userMessage.includes("5") || userMessage.toLowerCase().includes("luxury")) {
+        budgetValue = 5;
+      } else if (userMessage.includes("3") || userMessage.toLowerCase().includes("moderate")) {
+        budgetValue = 3;
+      }
+      
+      setTripPlan(prev => ({ ...prev, budget: budgetValue }));
       setPlanningState("askingInterests");
       
       setTimeout(() => {
@@ -125,12 +181,15 @@ const AIAssistant = () => {
       try {
         console.log("Generating itinerary using HuggingFace API with data:", tripPlan);
         
-        // Call the Hugging Face API via our service
+        // Call the Hugging Face API via our service with all parameters
         const generatedItinerary = await generateItinerary({
           destination: tripPlan.destination,
           departureCity: tripPlan.departureCity,
           duration: tripPlan.duration,
-          interests: tripPlan.interests
+          journeyDate: tripPlan.journeyDate,
+          interests: tripPlan.interests,
+          isPersonalized: tripPlan.isPersonalized,
+          budget: tripPlan.budget
         });
         
         console.log("Generated itinerary:", generatedItinerary);
@@ -234,6 +293,16 @@ const AIAssistant = () => {
   const openDetailedForm = () => {
     setShowDetailedForm(true);
   };
+  
+  // Update journeyDate in tripPlan when date is selected
+  useEffect(() => {
+    if (journeyDate) {
+      setTripPlan(prev => ({
+        ...prev,
+        journeyDate: format(journeyDate, "MMMM yyyy")
+      }));
+    }
+  }, [journeyDate]);
 
   // Handle form submission 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -267,12 +336,15 @@ const AIAssistant = () => {
     try {
       console.log("Generating itinerary using HuggingFace API with form data:", tripPlan);
       
-      // Call our service to generate the itinerary
+      // Call our service to generate the itinerary with all parameters
       const generatedItinerary = await generateItinerary({
         destination: tripPlan.destination,
         departureCity: tripPlan.departureCity,
         duration: tripPlan.duration,
-        interests: tripPlan.interests
+        journeyDate: tripPlan.journeyDate,
+        interests: tripPlan.interests,
+        isPersonalized: tripPlan.isPersonalized,
+        budget: tripPlan.budget
       });
       
       console.log("Generated itinerary:", generatedItinerary);
@@ -372,6 +444,8 @@ const AIAssistant = () => {
                   planningState === "askingDestination" ? "Enter destination..." : 
                   planningState === "askingDepartureCity" ? "Enter departure city..." :
                   planningState === "askingDuration" ? "Enter duration (e.g., 3 days, 1 week)..." :
+                  planningState === "askingJourneyDate" ? "Enter travel date (e.g., June 2025)..." :
+                  planningState === "askingBudget" ? "Enter budget level (1-5)..." :
                   planningState === "askingInterests" ? "Enter your interests..." :
                   "Ask me about your trip..."
                 }
@@ -500,6 +574,71 @@ const AIAssistant = () => {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="journey-date">
+                  Travel Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="journey-date"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left",
+                        !journeyDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {journeyDate ? format(journeyDate, "MMMM yyyy") : <span>Pick your travel month</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarPicker
+                      mode="single"
+                      selected={journeyDate}
+                      onSelect={setJourneyDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="budget" className="flex justify-between">
+                  <span>Budget Level</span>
+                  <span>{tripPlan.budget === 1 ? "Budget" : tripPlan.budget === 5 ? "Luxury" : "Moderate"}</span>
+                </Label>
+                <Slider
+                  id="budget"
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={[tripPlan.budget]}
+                  onValueChange={(value) => setTripPlan(prev => ({ ...prev, budget: value[0] }))}
+                  className="my-4"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Budget</span>
+                  <span>Moderate</span>
+                  <span>Luxury</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="personalized">Personalized Itinerary</Label>
+                  <Switch 
+                    id="personalized"
+                    checked={tripPlan.isPersonalized}
+                    onCheckedChange={(checked) => setTripPlan(prev => ({ ...prev, isPersonalized: checked }))}
+                  />
+                </div>
+                <p className="text-sm text-gray-500">
+                  Create a custom itinerary based on your preferences
+                </p>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="interests">
                   Interests
                 </Label>
@@ -518,7 +657,17 @@ const AIAssistant = () => {
                 Cancel
               </Button>
               <Button type="submit" disabled={generatingItinerary}>
-                {generatingItinerary ? "Generating..." : "Generate Itinerary"}
+                {generatingItinerary ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Itinerary
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -7,6 +7,9 @@ interface ItineraryRequest {
   departureCity: string;
   interests?: string;
   duration?: string;
+  journeyDate?: string;
+  isPersonalized?: boolean;
+  budget?: number;
 }
 
 export interface GeneratedItinerary {
@@ -46,6 +49,17 @@ export interface GeneratedItinerary {
     address: string;
   }[];
   tips: string[];
+  weather?: {
+    forecast: string;
+    temperature: string;
+    conditions: string;
+  }[];
+  localEvents?: {
+    name: string;
+    date: string;
+    description: string;
+    location: string;
+  }[];
 }
 
 export const generateItinerary = async (request: ItineraryRequest): Promise<GeneratedItinerary> => {
@@ -54,21 +68,25 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     
     // Convert duration to number if it's a string with just numbers
     const durationValue = request.duration ? parseInt(request.duration) : 5;
+    const budgetValue = request.budget || 3;
     
     // Connect to the Hugging Face Space using Gradio client
     const client = await Client.connect("piyushkumarp1/itinerary");
     
-    // Call the predict endpoint with the required parameters
+    // Call the predict endpoint with the required parameters including the new ones
     const result = await client.predict("/predict", { 
       source_city: request.departureCity,
       destination_city: request.destination,
       interests: request.interests || "General tourism",
       duration: isNaN(durationValue) ? 5 : durationValue,
+      journey_date: request.journeyDate || "Flexible dates",
+      is_personalized: request.isPersonalized !== undefined ? request.isPersonalized : true,
+      budget: budgetValue
     });
     
     console.log("API response:", result.data);
     
-    // Cast the result.data to string, as that's what processRawItinerary expects
+    // Cast the result.data to string to fix the TypeScript error
     const rawItineraryText = String(result.data);
     
     // Process the raw text into structured data
@@ -88,13 +106,15 @@ const processRawItinerary = (rawText: string, request: ItineraryRequest): Genera
   const itinerary: GeneratedItinerary = {
     destination: request.destination,
     duration: request.duration || "5 days",
-    dates: "Flexible dates",
+    dates: request.journeyDate || "Flexible dates",
     flights: [],
     hotels: [],
     dailySchedule: [],
     attractions: [],
     restaurants: [],
-    tips: []
+    tips: [],
+    weather: [],
+    localEvents: []
   };
   
   // Extract flight information
@@ -192,7 +212,7 @@ const processRawItinerary = (rawText: string, request: ItineraryRequest): Genera
   }
   
   // Extract restaurants
-  const restaurantsSection = extractSection(rawText, "Restaurant", "Tip");
+  const restaurantsSection = extractSection(rawText, "Restaurant", "Weather");
   if (restaurantsSection) {
     const restaurantLines = restaurantsSection.split('\n').filter(line => line.trim() !== '');
     restaurantLines.forEach(line => {
@@ -203,6 +223,39 @@ const processRawItinerary = (rawText: string, request: ItineraryRequest): Genera
           cuisine: match[4]?.trim() || "Local cuisine",
           priceRange: match[3]?.trim() || "$$$",
           address: match[2]?.trim() || `${request.destination}`
+        });
+      }
+    });
+  }
+  
+  // Extract weather information
+  const weatherSection = extractSection(rawText, "Weather", "Local Events");
+  if (weatherSection) {
+    const weatherLines = weatherSection.split('\n').filter(line => line.trim() !== '');
+    weatherLines.forEach(line => {
+      const match = line.match(/([^:]+):\s*([^,]+),\s*([^.]+)/);
+      if (match) {
+        itinerary.weather?.push({
+          forecast: match[1]?.trim() || "Forecast",
+          temperature: match[2]?.trim() || "Temperature",
+          conditions: match[3]?.trim() || "Conditions"
+        });
+      }
+    });
+  }
+  
+  // Extract local events
+  const eventsSection = extractSection(rawText, "Local Events", "Tips");
+  if (eventsSection) {
+    const eventLines = eventsSection.split('\n').filter(line => line.trim() !== '');
+    eventLines.forEach(line => {
+      const match = line.match(/([^-]+)(?:-\s*([^(]+))?(?:\s*\(([^)]+)\))?(?:\s*at\s*([^.]+))?/);
+      if (match) {
+        itinerary.localEvents?.push({
+          name: match[1]?.trim() || "Event",
+          date: match[3]?.trim() || "During your stay",
+          description: match[2]?.trim() || "Interesting local event",
+          location: match[4]?.trim() || request.destination
         });
       }
     });
