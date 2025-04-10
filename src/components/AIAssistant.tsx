@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +24,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 // Trip planning states - simplified
 type PlanningState = 
