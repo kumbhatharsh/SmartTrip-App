@@ -56,7 +56,7 @@ const defaultTripPlan: TripPlan = {
   journeyDate: "",
   interests: "",
   isPersonalized: true,
-  budget: 3
+  budget: 500
 };
 
 const AIAssistant = () => {
@@ -82,13 +82,11 @@ const AIAssistant = () => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Add user message to conversation
     const userMessage = message;
     setConversation(prev => [...prev, {role: 'user', content: userMessage}]);
     setMessage("");
     setLoading(true);
     
-    // Handle conversation based on current planning state
     if (planningState === "askingDestination") {
       setTripPlan(prev => ({ ...prev, destination: userMessage }));
       setPlanningState("askingDepartureCity");
@@ -138,7 +136,7 @@ const AIAssistant = () => {
       setTimeout(() => {
         setConversation(prev => [...prev, {
           role: 'assistant', 
-          content: `What's your budget for this trip? (1 = Budget, 3 = Moderate, 5 = Luxury)`
+          content: `What's your budget for this trip? (Enter a value of 500 or more)`
         }]);
         setLoading(false);
       }, 500);
@@ -146,14 +144,14 @@ const AIAssistant = () => {
     }
     
     if (planningState === "askingBudget") {
-      // Try to parse budget
-      let budgetValue = 3;
-      if (userMessage.includes("1") || userMessage.toLowerCase().includes("budget")) {
-        budgetValue = 1;
-      } else if (userMessage.includes("5") || userMessage.toLowerCase().includes("luxury")) {
-        budgetValue = 5;
-      } else if (userMessage.includes("3") || userMessage.toLowerCase().includes("moderate")) {
-        budgetValue = 3;
+      let budgetValue = 500;
+      try {
+        const parsed = parseInt(userMessage);
+        if (!isNaN(parsed) && parsed >= 500) {
+          budgetValue = parsed;
+        }
+      } catch (error) {
+        console.error("Error parsing budget:", error);
       }
       
       setTripPlan(prev => ({ ...prev, budget: budgetValue }));
@@ -181,7 +179,6 @@ const AIAssistant = () => {
       try {
         console.log("Generating itinerary using HuggingFace API with data:", tripPlan);
         
-        // Call the Hugging Face API via our service with all parameters
         const generatedItinerary = await generateItinerary({
           destination: tripPlan.destination,
           departureCity: tripPlan.departureCity,
@@ -200,7 +197,6 @@ const AIAssistant = () => {
           content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
         }]);
         
-        // Navigate to itinerary details with the data
         navigate("/itinerary-details", { 
           state: { itinerary: generatedItinerary }
         });
@@ -229,17 +225,14 @@ const AIAssistant = () => {
       return;
     }
     
-    // Handle displaying results state
     if (planningState === "displayingResults") {
       if (userMessage.toLowerCase().includes("yes") && userMessage.toLowerCase().includes("see")) {
-        // Navigate to itineraries page
         navigate('/itineraries');
         setLoading(false);
         return;
       }
     }
 
-    // Handle general messages or trigger the travel planning flow
     const lowerMessage = userMessage.toLowerCase();
     if (
       lowerMessage.includes("travel") || 
@@ -258,7 +251,6 @@ const AIAssistant = () => {
         setLoading(false);
       }, 800);
     } else {
-      // General assistant response
       setTimeout(() => {
         setConversation(prev => [...prev, {
           role: 'assistant', 
@@ -269,18 +261,15 @@ const AIAssistant = () => {
     }
   };
 
-  // Function for preset queries
   const handlePresetQuery = (query: string) => {
     setMessage(query);
     
-    // Set focus on the input so the user can press Enter
     const inputElement = document.getElementById("chat-input") as HTMLInputElement;
     if (inputElement) {
       inputElement.focus();
     }
   };
 
-  // Function to start travel planning
   const startTravelPlanning = () => {
     setConversation(prev => [...prev, {
       role: 'assistant', 
@@ -289,12 +278,10 @@ const AIAssistant = () => {
     setPlanningState("askingDestination");
   };
 
-  // Function to open detailed form
   const openDetailedForm = () => {
     setShowDetailedForm(true);
   };
   
-  // Update journeyDate in tripPlan when date is selected
   useEffect(() => {
     if (journeyDate) {
       setTripPlan(prev => ({
@@ -304,7 +291,6 @@ const AIAssistant = () => {
     }
   }, [journeyDate]);
 
-  // Handle form submission 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -320,7 +306,6 @@ const AIAssistant = () => {
     setGeneratingItinerary(true);
     setShowDetailedForm(false);
     
-    // Add messages to conversation
     setConversation(prev => [
       ...prev, 
       {
@@ -336,7 +321,6 @@ const AIAssistant = () => {
     try {
       console.log("Generating itinerary using HuggingFace API with form data:", tripPlan);
       
-      // Call our service to generate the itinerary with all parameters
       const generatedItinerary = await generateItinerary({
         destination: tripPlan.destination,
         departureCity: tripPlan.departureCity,
@@ -354,7 +338,6 @@ const AIAssistant = () => {
         content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
       }]);
       
-      // Navigate to itinerary details with data
       navigate("/itinerary-details", { 
         state: { itinerary: generatedItinerary }
       });
@@ -403,7 +386,6 @@ const AIAssistant = () => {
               </div>
             </div>
 
-            {/* Conversation Messages */}
             <div className="border rounded-lg p-3 mb-4 bg-gray-50 max-h-64 overflow-y-auto">
               {conversation.length === 0 ? (
                 <>
@@ -434,7 +416,6 @@ const AIAssistant = () => {
               )}
             </div>
 
-            {/* Input Form */}
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <Input
                 id="chat-input"
@@ -445,7 +426,7 @@ const AIAssistant = () => {
                   planningState === "askingDepartureCity" ? "Enter departure city..." :
                   planningState === "askingDuration" ? "Enter duration (e.g., 3 days, 1 week)..." :
                   planningState === "askingJourneyDate" ? "Enter travel date (e.g., June 2025)..." :
-                  planningState === "askingBudget" ? "Enter budget level (1-5)..." :
+                  planningState === "askingBudget" ? "Enter budget (minimum 500)..." :
                   planningState === "askingInterests" ? "Enter your interests..." :
                   "Ask me about your trip..."
                 }
@@ -457,7 +438,6 @@ const AIAssistant = () => {
               </Button>
             </form>
 
-            {/* Preset Queries */}
             <div className="mt-4 flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
@@ -485,7 +465,6 @@ const AIAssistant = () => {
               </Button>
             </div>
 
-            {/* Planning action buttons */}
             {planningState === "idle" && conversation.length === 0 && (
               <div className="mt-4 grid grid-cols-1 gap-2">
                 <Button 
@@ -523,7 +502,6 @@ const AIAssistant = () => {
         </Popover>
       )}
 
-      {/* Detailed Form Dialog */}
       <Dialog open={showDetailedForm} onOpenChange={setShowDetailedForm}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -604,24 +582,22 @@ const AIAssistant = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="budget" className="flex justify-between">
-                  <span>Budget Level</span>
-                  <span>{tripPlan.budget === 1 ? "Budget" : tripPlan.budget === 5 ? "Luxury" : "Moderate"}</span>
+                <Label htmlFor="budget">
+                  Budget (minimum 500)
                 </Label>
-                <Slider
+                <Input
                   id="budget"
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={[tripPlan.budget]}
-                  onValueChange={(value) => setTripPlan(prev => ({ ...prev, budget: value[0] }))}
-                  className="my-4"
+                  type="number"
+                  min={500}
+                  placeholder="Enter your budget"
+                  value={tripPlan.budget}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (!isNaN(value) && value >= 500) {
+                      setTripPlan(prev => ({ ...prev, budget: value }));
+                    }
+                  }}
                 />
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Budget</span>
-                  <span>Moderate</span>
-                  <span>Luxury</span>
-                </div>
               </div>
               
               <div className="space-y-2">
