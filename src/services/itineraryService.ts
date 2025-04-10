@@ -68,31 +68,10 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     // Convert duration to number if it's a string with just numbers
     const durationValue = request.duration ? parseInt(request.duration) : 5;
     
-    // Convert budget from currency value (e.g. 500) to budget level (1-5)
-    // We'll map budget ranges to levels:
-    // 500-1000: 1 (Budget)
-    // 1001-2000: 2
-    // 2001-3000: 3 (Moderate)
-    // 3001-4000: 4
-    // 4001+: 5 (Luxury)
+    // Ensure budget is at least 500
+    const budgetValue = request.budget && request.budget >= 500 ? request.budget : 500;
     
-    let budgetLevel = 3; // Default to moderate
-    
-    if (request.budget) {
-      if (request.budget <= 1000) {
-        budgetLevel = 1;
-      } else if (request.budget <= 2000) {
-        budgetLevel = 2;
-      } else if (request.budget <= 3000) {
-        budgetLevel = 3;
-      } else if (request.budget <= 4000) {
-        budgetLevel = 4;
-      } else {
-        budgetLevel = 5;
-      }
-    }
-    
-    console.log("Using budget level:", budgetLevel, "for budget value:", request.budget);
+    console.log("Using budget value:", budgetValue);
     
     // Connect to the Hugging Face Space using Gradio client
     const client = await Client.connect("piyushkumarp1/itinerary");
@@ -105,7 +84,7 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
       duration: isNaN(durationValue) ? 5 : durationValue,
       journey_date: request.journeyDate || "Flexible dates",
       is_personalized: request.isPersonalized !== undefined ? request.isPersonalized : true,
-      budget: budgetLevel
+      budget: budgetValue
     });
     
     console.log("API response:", result.data);

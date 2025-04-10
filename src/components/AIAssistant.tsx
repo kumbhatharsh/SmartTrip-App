@@ -22,7 +22,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { generateItinerary } from "@/services/itineraryService";
 import { format } from "date-fns";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
@@ -575,7 +574,7 @@ const AIAssistant = () => {
                       selected={journeyDate}
                       onSelect={setJourneyDate}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
