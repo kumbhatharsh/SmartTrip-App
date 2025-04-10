@@ -8,6 +8,9 @@ interface ItineraryRequest {
   departureCity: string;
   interests?: string;
   duration?: string;
+  journeyDate?: string; // This will now be in YYYY-MM-DD format
+  budget?: number;
+  isPersonalized?: boolean;
 }
 
 interface ItineraryResponse {
@@ -34,8 +37,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
-// Generate a detailed itinerary based on the request parameters - simplified for required parameters
-function generateDetailedItinerary(destination: string, departureCity: string, interests?: string, duration = "5 days"): DetailedItinerary {
+// Generate a detailed itinerary based on the request parameters
+function generateDetailedItinerary(
+  destination: string, 
+  departureCity: string, 
+  interests?: string, 
+  duration = "5 days",
+  journeyDate?: string,
+  budget = 500,
+  isPersonalized = true
+): DetailedItinerary {
+  console.log(`Generating itinerary with journey date: ${journeyDate}, budget: ${budget}`);
+  
   // Paris dummy data
   if (destination.toLowerCase().includes("paris")) {
     return {
@@ -250,14 +263,25 @@ serve(async (req) => {
       interests += interests ? `. Duration: ${requestData.duration}` : `Duration: ${requestData.duration}`;
     }
     
+    if (requestData.journeyDate) {
+      interests += interests ? `. Date: ${requestData.journeyDate}` : `Date: ${requestData.journeyDate}`;
+    }
+    
+    if (requestData.budget && requestData.budget >= 500) {
+      interests += interests ? `. Budget: $${requestData.budget}` : `Budget: $${requestData.budget}`;
+    }
+    
     console.log(`Generating itinerary from ${requestData.departureCity} to ${requestData.destination} with details: ${interests}`);
     
-    // Generate detailed itinerary using our internal function
+    // Generate detailed itinerary using our internal function with all parameters
     const generatedItinerary = generateDetailedItinerary(
       requestData.destination, 
       requestData.departureCity, 
       interests,
-      requestData.duration
+      requestData.duration,
+      requestData.journeyDate,
+      requestData.budget,
+      requestData.isPersonalized
     );
 
     // Return the response with the generated itinerary

@@ -1,12 +1,14 @@
+
 // Itinerary generation service using the Hugging Face API
 import { Client } from "@gradio/client";
+import { format } from "date-fns";
 
 interface ItineraryRequest {
   destination: string;
   departureCity: string;
   interests?: string;
   duration?: string;
-  journeyDate?: string;
+  journeyDate?: string | Date;
   isPersonalized?: boolean;
   budget?: number;
 }
@@ -73,6 +75,34 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     
     console.log("Using budget value:", budgetValue);
     
+    // Format journey date to YYYY-MM-DD if it's a Date object
+    let formattedJourneyDate = "Flexible dates";
+    if (request.journeyDate) {
+      if (request.journeyDate instanceof Date) {
+        formattedJourneyDate = format(request.journeyDate, "yyyy-MM-dd");
+      } else if (typeof request.journeyDate === 'string') {
+        // Try to parse it as a date if it's not already in YYYY-MM-DD format
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(request.journeyDate)) {
+          try {
+            const dateObj = new Date(request.journeyDate);
+            if (!isNaN(dateObj.getTime())) {
+              formattedJourneyDate = format(dateObj, "yyyy-MM-dd");
+            } else {
+              formattedJourneyDate = request.journeyDate;
+            }
+          } catch (e) {
+            // If parsing fails, use the original string
+            formattedJourneyDate = request.journeyDate;
+          }
+        } else {
+          // Already in YYYY-MM-DD format
+          formattedJourneyDate = request.journeyDate;
+        }
+      }
+    }
+    
+    console.log("Using formatted journey date:", formattedJourneyDate);
+    
     // Connect to the Hugging Face Space using Gradio client
     const client = await Client.connect("piyushkumarp1/itinerary");
     
@@ -82,7 +112,7 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
       destination_city: request.destination,
       interests: request.interests || "General tourism",
       duration: isNaN(durationValue) ? 5 : durationValue,
-      journey_date: request.journeyDate || "Flexible dates",
+      journey_date: formattedJourneyDate,
       is_personalized: request.isPersonalized !== undefined ? request.isPersonalized : true,
       budget: budgetValue
     });

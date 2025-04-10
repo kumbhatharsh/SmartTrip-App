@@ -25,7 +25,6 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-// Trip planning states - simplified
 type PlanningState = 
   | "idle" 
   | "askingDestination" 
@@ -37,7 +36,6 @@ type PlanningState =
   | "generatingItinerary"
   | "displayingResults";
 
-// Simplified trip plan interface
 interface TripPlan {
   destination: string;
   departureCity: string;
@@ -285,7 +283,7 @@ const AIAssistant = () => {
     if (journeyDate) {
       setTripPlan(prev => ({
         ...prev,
-        journeyDate: format(journeyDate, "MMMM yyyy")
+        journeyDate: format(journeyDate, "yyyy-MM-dd")
       }));
     }
   }, [journeyDate]);
@@ -565,7 +563,7 @@ const AIAssistant = () => {
                       )}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {journeyDate ? format(journeyDate, "MMMM yyyy") : <span>Pick your travel month</span>}
+                      {journeyDate ? format(journeyDate, "yyyy-MM-dd") : <span>Pick your travel date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
