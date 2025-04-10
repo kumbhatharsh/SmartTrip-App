@@ -68,7 +68,12 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     
     // Convert duration to number if it's a string with just numbers
     const durationValue = request.duration ? parseInt(request.duration) : 5;
-    const budgetValue = request.budget || 3;
+    
+    // Ensure budget is in the proper range (1-5) for the API
+    // The error suggests the API expects a budget value between 1-5, not actual currency values
+    const budgetValue = request.budget !== undefined ? Math.min(Math.max(1, request.budget), 5) : 3;
+    
+    console.log("Using budget value:", budgetValue);
     
     // Connect to the Hugging Face Space using Gradio client
     const client = await Client.connect("piyushkumarp1/itinerary");
