@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -84,10 +85,20 @@ const Itineraries = () => {
     
     setLoading(true);
     try {
-      const { data: itineraries, error } = await supabase
+      let query = supabase
         .from('Itinerary')
         .select('*')
         .ilike('destination', `%${destinationInput}%`);
+      
+      // Add duration filter if duration input is provided
+      if (durationInput && durationInput.trim() !== '') {
+        const durationValue = parseInt(durationInput);
+        if (!isNaN(durationValue)) {
+          query = query.eq('duration', durationValue);
+        }
+      }
+      
+      const { data: itineraries, error } = await query;
       
       if (error) throw error;
       

@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer, Download } from "lucide-react";
+import { ArrowLeft, Printer, Download, Plane, Hotel } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const RawItineraryView = () => {
@@ -23,6 +23,14 @@ const RawItineraryView = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  // Function to find a destination from the content for navigation purposes
+  const extractDestination = (): string => {
+    // Simple regex to try to find a destination in the content
+    // This is a basic implementation and might need refinement
+    const destinationMatch = rawContent.match(/destination:?\s*([A-Za-z\s,]+)[\n<]/i);
+    return destinationMatch ? destinationMatch[1].trim() : "";
   };
 
   return (
@@ -67,6 +75,22 @@ const RawItineraryView = () => {
               className="itinerary-content prose prose-slate max-w-none"
               dangerouslySetInnerHTML={{ __html: rawContent }}
             />
+
+            {/* Navigation buttons for flights and hotels */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 print:hidden">
+              <Button 
+                className="bg-ocean-600 hover:bg-ocean-700 flex items-center gap-2"
+                onClick={() => navigate('/flights', { state: { destination: extractDestination() } })}
+              >
+                <Plane className="h-4 w-4" /> Find Flights
+              </Button>
+              <Button 
+                className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2"
+                onClick={() => navigate('/hotels', { state: { destination: extractDestination() } })}
+              >
+                <Hotel className="h-4 w-4" /> Browse Hotels
+              </Button>
+            </div>
           </div>
         </div>
       </main>
