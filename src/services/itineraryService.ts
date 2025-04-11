@@ -8,7 +8,7 @@ interface ItineraryRequest {
   departureCity: string;
   interests?: string;
   duration?: string;
-  journeyDate?: string | Date;
+  journeyDate?: string;
   isPersonalized?: boolean;
   budget?: number;
 }
@@ -61,6 +61,7 @@ export interface GeneratedItinerary {
     description: string;
     location: string;
   }[];
+  rawResponse?: string; // Add this field to store the raw API response
 }
 
 export const generateItinerary = async (request: ItineraryRequest): Promise<GeneratedItinerary> => {
@@ -75,29 +76,25 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     
     console.log("Using budget value:", budgetValue);
     
-    // Format journey date to YYYY-MM-DD if it's a Date object
+    // Format journey date to YYYY-MM-DD
     let formattedJourneyDate = "Flexible dates";
     if (request.journeyDate) {
-      if (request.journeyDate instanceof Date) {
-        formattedJourneyDate = format(request.journeyDate, "yyyy-MM-dd");
-      } else if (typeof request.journeyDate === 'string') {
-        // Try to parse it as a date if it's not already in YYYY-MM-DD format
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(request.journeyDate)) {
-          try {
-            const dateObj = new Date(request.journeyDate);
-            if (!isNaN(dateObj.getTime())) {
-              formattedJourneyDate = format(dateObj, "yyyy-MM-dd");
-            } else {
-              formattedJourneyDate = request.journeyDate;
-            }
-          } catch (e) {
-            // If parsing fails, use the original string
+      // Since we've updated the type to only accept string, we just need to ensure it's in the right format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(request.journeyDate)) {
+        try {
+          const dateObj = new Date(request.journeyDate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedJourneyDate = format(dateObj, "yyyy-MM-dd");
+          } else {
             formattedJourneyDate = request.journeyDate;
           }
-        } else {
-          // Already in YYYY-MM-DD format
+        } catch (e) {
+          // If parsing fails, use the original string
           formattedJourneyDate = request.journeyDate;
         }
+      } else {
+        // Already in YYYY-MM-DD format
+        formattedJourneyDate = request.journeyDate;
       }
     }
     
@@ -124,6 +121,9 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     
     // Process the raw text into structured data
     const processedItinerary = processRawItinerary(rawItineraryText, request);
+    
+    // Add the raw response to the returned object
+    processedItinerary.rawResponse = rawItineraryText;
     
     return processedItinerary;
   } catch (error) {

@@ -4,6 +4,7 @@ import Flights from "@/pages/Flights";
 import Hotels from "@/pages/Hotels";
 import Itineraries from "@/pages/Itineraries";
 import ItineraryDetails from "@/pages/ItineraryDetails";
+import RawItineraryView from "@/pages/RawItineraryView";
 import MyTrips from "@/pages/MyTrips";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
@@ -26,6 +27,7 @@ function App() {
       <Route path="/hotels" element={<Hotels />} />
       <Route path="/itineraries" element={<Itineraries />} />
       <Route path="/itinerary-details" element={<ItineraryDetails />} />
+      <Route path="/raw-itinerary" element={<RawItineraryView />} />
       <Route path="/my-trips" element={<MyTrips />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />

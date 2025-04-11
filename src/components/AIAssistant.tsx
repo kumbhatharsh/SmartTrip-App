@@ -194,8 +194,8 @@ const AIAssistant = () => {
           content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
         }]);
         
-        navigate("/itinerary-details", { 
-          state: { itinerary: generatedItinerary }
+        navigate("/raw-itinerary", { 
+          state: { rawResponse: generatedItinerary.rawResponse }
         });
         
         toast({
@@ -335,8 +335,8 @@ const AIAssistant = () => {
         content: `I've created your custom itinerary for your trip to ${tripPlan.destination}!`
       }]);
       
-      navigate("/itinerary-details", { 
-        state: { itinerary: generatedItinerary }
+      navigate("/raw-itinerary", { 
+        state: { rawResponse: generatedItinerary.rawResponse }
       });
       
       toast({
