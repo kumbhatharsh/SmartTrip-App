@@ -32,15 +32,17 @@ const RawItineraryView = () => {
           >
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>
-          <h1 className="text-2xl font-bold">Raw Itinerary</h1>
+          <h1 className="text-2xl font-bold">Generated Itinerary</h1>
           <p className="text-gray-600 mb-6">
-            This is the raw output from the itinerary generation API.
+            This is the itinerary generated from our AI service.
           </p>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6 whitespace-pre-wrap font-mono text-sm overflow-auto">
-          {rawContent}
-        </div>
+        {/* Render the HTML content directly */}
+        <div 
+          className="bg-white rounded-lg shadow p-6 overflow-auto"
+          dangerouslySetInnerHTML={{ __html: rawContent }}
+        />
       </main>
       <Footer />
     </div>
