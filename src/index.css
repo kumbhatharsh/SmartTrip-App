@@ -105,3 +105,79 @@
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+/* Itinerary Content Styling */
+.itinerary-content h1 {
+  @apply text-3xl font-bold text-ocean-700 mb-6;
+}
+
+.itinerary-content h2 {
+  @apply text-2xl font-semibold text-teal-700 mt-8 mb-4 pb-2 border-b border-teal-200;
+}
+
+.itinerary-content h3 {
+  @apply text-xl font-medium text-sunset-700 mt-6 mb-3;
+}
+
+.itinerary-content p {
+  @apply my-3 text-gray-700 leading-relaxed;
+}
+
+.itinerary-content ul {
+  @apply list-disc pl-6 my-4 space-y-2 text-gray-700;
+}
+
+.itinerary-content li {
+  @apply leading-relaxed;
+}
+
+.itinerary-content table {
+  @apply w-full my-6 border-collapse;
+}
+
+.itinerary-content th {
+  @apply bg-ocean-50 text-ocean-700 font-semibold p-3 border border-ocean-200 text-left;
+}
+
+.itinerary-content td {
+  @apply p-3 border border-gray-200 text-gray-700;
+}
+
+/* Special sections styling */
+.itinerary-content h2:contains("Weather") ~ p,
+.itinerary-content h2:contains("Weather") ~ ul {
+  @apply bg-sky-50 p-4 rounded-lg border-l-4 border-sky-400;
+}
+
+.itinerary-content h2:contains("Flight") ~ table,
+.itinerary-content h2:contains("Hotel") ~ table {
+  @apply bg-white shadow-sm rounded-lg overflow-hidden;
+}
+
+.itinerary-content h2:contains("Local Events") ~ ul {
+  @apply bg-sunset-50 p-4 rounded-lg border-l-4 border-sunset-400;
+}
+
+.itinerary-content h2:contains("Tips") ~ ul {
+  @apply bg-teal-50 p-4 rounded-lg border-l-4 border-teal-400;
+}
+
+/* Print styles */
+@media print {
+  .itinerary-content {
+    @apply text-black;
+  }
+  
+  nav, footer, button {
+    display: none !important;
+  }
+  
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  .bg-white {
+    box-shadow: none !important;
+  }
+}
