@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AIAssistant from "@/components/AIAssistant";
@@ -13,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
+import { format, parse, isValid } from "date-fns";
 
 const Flights = () => {
   const [priceRange, setPriceRange] = useState([200, 800]);
@@ -23,9 +24,63 @@ const Flights = () => {
   const [arrivalCity, setArrivalCity] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const [selectedTimeFilters, setSelectedTimeFilters] = useState({
+    Morning: false,
+    Afternoon: false,
+    Evening: false,
+    Night: false
+  });
+  const [selectedAirlines, setSelectedAirlines] = useState({
+    "Air France": false,
+    "Lufthansa": false,
+    "Emirates": false,
+    "Qatar Airways": false,
+    "Etihad Airways": false
+  });
+  const [luggageIncluded, setLuggageIncluded] = useState(false);
   const { toast } = useToast();
+  const location = useLocation();
 
-  // Function to search flights
+  useEffect(() => {
+    if (location.state?.destination) {
+      setArrivalCity(location.state.destination);
+    }
+  }, [location.state]);
+
+  const getTimePeriod = (timeStr) => {
+    try {
+      const date = new Date(timeStr);
+      const hours = date.getHours();
+      
+      if (hours >= 5 && hours < 12) return "Morning";
+      if (hours >= 12 && hours < 17) return "Afternoon";
+      if (hours >= 17 && hours < 21) return "Evening";
+      return "Night";
+    } catch (error) {
+      return "";
+    }
+  };
+
+  const formatDateForQuery = (dateStr) => {
+    if (!dateStr) return null;
+    
+    try {
+      let date;
+      if (typeof dateStr === 'string') {
+        date = new Date(dateStr);
+      } else {
+        date = dateStr;
+      }
+      
+      if (!isValid(date)) return null;
+      
+      return format(date, 'yyyy-MM-dd');
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return null;
+    }
+  };
+
   const searchFlights = async () => {
     if (!departureCity.trim() || !arrivalCity.trim()) {
       toast({
@@ -40,14 +95,18 @@ const Flights = () => {
     setSearched(true);
     
     try {
-      // Basic query with from/to filters
       let query = supabase
         .from('Flight')
         .select('*')
         .ilike('departure', `%${departureCity}%`)
         .ilike('arrival', `%${arrivalCity}%`);
       
-      // Add price range filter if set
+      const formattedDepartureDate = formatDateForQuery(departureDate);
+      if (formattedDepartureDate) {
+        query = query.gte('departureTime', `${formattedDepartureDate}T00:00:00`)
+                     .lt('departureTime', `${formattedDepartureDate}T23:59:59`);
+      }
+      
       if (priceRange && priceRange.length === 2) {
         query = query
           .gte('price', priceRange[0])
@@ -59,8 +118,7 @@ const Flights = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        // Transform the data to match the expected Flight structure
-        const formattedFlights = data.map(flight => ({
+        let formattedFlights = data.map(flight => ({
           ...flight,
           id: flight.id,
           from: flight.departure,
@@ -73,9 +131,29 @@ const Flights = () => {
           flightNumber: flight.flightNumber
         }));
         
+        const anyTimeFilterSelected = Object.values(selectedTimeFilters).some(value => value);
+        if (anyTimeFilterSelected) {
+          formattedFlights = formattedFlights.filter(flight => {
+            const timePeriod = getTimePeriod(flight.departureTime);
+            return selectedTimeFilters[timePeriod];
+          });
+        }
+        
+        const anyAirlineSelected = Object.values(selectedAirlines).some(value => value);
+        if (anyAirlineSelected) {
+          formattedFlights = formattedFlights.filter(flight => {
+            return selectedAirlines[flight.airline] || !Object.values(selectedAirlines).some(v => v);
+          });
+        }
+        
+        if (luggageIncluded) {
+          formattedFlights = formattedFlights.filter(flight => 
+            flight.airline === "Emirates" || flight.airline === "Qatar Airways");
+        }
+        
         setFlights(formattedFlights);
         toast({
-          title: `Found ${data.length} flights from ${departureCity} to ${arrivalCity}`,
+          title: `Found ${formattedFlights.length} flights from ${departureCity} to ${arrivalCity}`,
         });
       } else {
         setFlights([]);
@@ -97,14 +175,12 @@ const Flights = () => {
     }
   };
 
-  // Helper function to calculate flight duration
   const calculateDuration = (departure, arrival) => {
     if (!departure || !arrival) return "N/A";
     
     const departureTime = new Date(departure);
     const arrivalTime = new Date(arrival);
     
-    // Check if dates are valid
     if (isNaN(departureTime.getTime()) || isNaN(arrivalTime.getTime())) {
       return "N/A";
     }
@@ -117,18 +193,30 @@ const Flights = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  // Swap departure and arrival cities
   const swapCities = () => {
     const temp = departureCity;
     setDepartureCity(arrivalCity);
     setArrivalCity(temp);
   };
 
+  const handleTimeFilterChange = (time) => {
+    setSelectedTimeFilters(prev => ({
+      ...prev,
+      [time]: !prev[time]
+    }));
+  };
+
+  const handleAirlineFilterChange = (airline) => {
+    setSelectedAirlines(prev => ({
+      ...prev,
+      [airline]: !prev[airline]
+    }));
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        {/* Header Section */}
         <div className="bg-ocean-600 text-white py-12">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center mb-6">
@@ -335,10 +423,8 @@ const Flights = () => {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="container mx-auto py-12 px-4">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Filters */}
             <div className="lg:w-1/4">
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
                 <h2 className="text-xl font-bold mb-6">Filters</h2>
@@ -370,7 +456,11 @@ const Flights = () => {
                   <div className="space-y-2">
                     {["Morning", "Afternoon", "Evening", "Night"].map((time) => (
                       <div key={time} className="flex items-center space-x-2">
-                        <Checkbox id={`time-${time}`} />
+                        <Checkbox 
+                          id={`time-${time}`} 
+                          checked={selectedTimeFilters[time]}
+                          onCheckedChange={() => handleTimeFilterChange(time)}
+                        />
                         <Label htmlFor={`time-${time}`} className="text-sm">
                           {time}
                         </Label>
@@ -385,9 +475,13 @@ const Flights = () => {
                     Airlines
                   </h3>
                   <div className="space-y-2">
-                    {["Air France", "Lufthansa", "Emirates", "Qatar Airways", "Etihad Airways"].map((airline) => (
+                    {Object.keys(selectedAirlines).map((airline) => (
                       <div key={airline} className="flex items-center space-x-2">
-                        <Checkbox id={`airline-${airline}`} />
+                        <Checkbox 
+                          id={`airline-${airline}`} 
+                          checked={selectedAirlines[airline]}
+                          onCheckedChange={() => handleAirlineFilterChange(airline)}
+                        />
                         <Label htmlFor={`airline-${airline}`} className="text-sm">
                           {airline}
                         </Label>
@@ -402,7 +496,11 @@ const Flights = () => {
                     Luggage Included
                   </h3>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="luggage" />
+                    <Checkbox 
+                      id="luggage" 
+                      checked={luggageIncluded}
+                      onCheckedChange={() => setLuggageIncluded(!luggageIncluded)}
+                    />
                     <Label htmlFor="luggage" className="text-sm">Show only</Label>
                   </div>
                 </div>
@@ -421,7 +519,6 @@ const Flights = () => {
               </div>
             </div>
             
-            {/* Flight Listings */}
             <div className="lg:w-3/4">
               <div className="mb-6 flex justify-between items-center">
                 <h2 className="text-2xl font-bold">
